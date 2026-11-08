@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music Bingo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14102a; --panel:#1f1a3d; --panel2:#2a2452; --line:#3a3370; --field:#120e26;
+  --text:#f3f0ff; --muted:#a9a3d1;
+  --accent:#ff4fa3; --accent2:#5ee7ff; --good:#3ddc97; --bad:#ff6b6b; --warn:#ffcc4d;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;min-height:100vh;color:var(--text);font:15px/1.45 Inter,system-ui,sans-serif;
+  background:radial-gradient(1100px 600px at 5% -10%,#3b1f6b 0,transparent 60%),
+             radial-gradient(900px 500px at 110% 0%,#0f3d5c 0,transparent 55%),var(--bg);background-attachment:fixed}
+h1,h2,h3,.display{font-family:Fredoka,Inter,sans-serif;font-weight:600;margin:0}
+h2{font-size:20px;margin-bottom:12px}
+a{color:var(--accent2)}
+code{background:var(--field);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
+[hidden]{display:none!important}
+
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 24px;border-bottom:1px solid var(--line);background:rgba(20,16,42,.88);backdrop-filter:blur(8px)}
+.logo{font:700 22px Fredoka,sans-serif;letter-spacing:.01em}
+.logo span{color:var(--accent)}
+nav{display:flex;gap:6px}
+.tab{appearance:none;border:1px solid transparent;background:none;color:var(--muted);font:600 15px Inter,sans-serif;padding:8px 14px;border-radius:10px;cursor:pointer}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);background:var(--panel2);border-color:var(--line)}
+
+main{max-width:1220px;margin:0 auto;padding:24px 16px 80px}
+.stack{display:flex;flex-direction:column;gap:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:10px 16px;
+  font:600 15px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .05s,filter .15s}
+.btn:hover{filter:brightness(1.15)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.good{background:var(--good);border-color:var(--good);color:#06261a}
+.btn.ghost{background:none}
+.btn.big{padding:14px 22px;font-size:17px;border-radius:14px}
+.btn.huge{padding:18px 26px;font:700 22px Fredoka,sans-serif;border-radius:16px;width:100%;justify-content:center}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+
+input,textarea,select{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent2);outline-offset:1px}
+textarea{width:100%;min-height:340px;resize:vertical;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.form label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg{display:flex;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{flex:1;appearance:none;border:0;background:none;color:var(--muted);padding:7px 10px;border-radius:8px;font:600 14px Inter,sans-serif;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff}
+
+.rtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.rtab{appearance:none;border:1px solid var(--line);background:var(--field);color:var(--muted);border-radius:999px;padding:7px 14px;font:600 14px Inter,sans-serif;cursor:pointer}
+.rtab.on{background:var(--panel2);color:var(--text);border-color:var(--accent)}
+.pill{display:inline-block;min-width:22px;padding:0 7px;border-radius:999px;background:var(--panel2);font-size:12px;text-align:center;margin-left:4px}
+.notes{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.note{padding:8px 12px;border-radius:10px;font-size:14px;border:1px solid var(--line);background:var(--field)}
+.note.ok{border-color:rgba(61,220,151,.5)}
+.note.warn{border-color:rgba(255,204,77,.6)}
+.note.bad{border-color:rgba(255,107,107,.7)}
+.testlist{max-height:240px;overflow:auto;font-size:13px;margin-top:8px}
+.testlist div{padding:3px 0;border-bottom:1px solid var(--line)}
+
+/* Play view */
+.playhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.playhead h1{font-size:28px}
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stage{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--panel)}
+.stage .n{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.stage .t{font:600 18px Fredoka,sans-serif}
+.stage .w{font-size:12px;color:var(--good);margin-top:2px;word-break:break-word}
+.stage.now{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,79,163,.22);background:linear-gradient(180deg,rgba(255,79,163,.12),transparent)}
+.stage.done .t{text-decoration:line-through;text-decoration-color:var(--good)}
+.cols{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
+.nowcard{position:relative}
+.nowlabel{font-size:12px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em}
+.nowtitle{font:600 34px/1.1 Fredoka,sans-serif;margin-top:6px}
+.nowartist{font-size:18px;color:var(--muted);margin-top:2px}
+.hidetitles .nowtitle,.hidetitles .nowartist,.hidetitles .upnext .t,.hidetitles .playedlist,.hidetitles .ticklist{filter:blur(9px);user-select:none}
+.ytbox{margin-top:14px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.ytbox iframe,#yt{width:320px;height:180px;border-radius:12px;background:#000;max-width:100%}
+.bar{height:8px;background:var(--panel2);border-radius:8px;overflow:hidden;margin-top:14px}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .25s linear}
+.upnext{margin-top:14px;padding:12px 14px;border:1px dashed var(--line);border-radius:14px}
+.upnext .t{font:600 20px Fredoka,sans-serif}
+.playedlist{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow:auto;font-size:14px}
+.playedlist div{display:flex;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
+.playedlist b{color:var(--muted);min-width:26px;font-weight:600}
+.ticklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;max-height:340px;overflow:auto;margin-top:10px}
+.ticklist label{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid var(--line);border-radius:10px;font-size:13px;cursor:pointer;background:var(--field)}
+.ticklist label.on{border-color:var(--good);background:rgba(61,220,151,.12)}
+.banner{border-radius:16px;padding:16px 18px;border:1px solid var(--good);background:rgba(61,220,151,.12)}
+.banner h3{font-size:22px;margin-bottom:4px}
+
+.codein{font:700 30px/1 Fredoka,sans-serif;letter-spacing:.14em;text-transform:uppercase;width:100%;text-align:center;padding:14px}
+.cgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:12px}
+.cell{background:var(--field);border:1px solid var(--line);border-radius:9px;padding:6px 4px;font-size:11.5px;line-height:1.25;min-height:58px;
+  display:flex;flex-direction:column;justify-content:center;text-align:center;word-break:break-word}
+.cell small{color:var(--muted);font-size:10.5px;margin-top:2px}
+.cell.hit{background:rgba(61,220,151,.2);border-color:var(--good)}
+.cell.rowfull{box-shadow:inset 0 0 0 2px var(--good)}
+.cell.last{outline:2px solid var(--warn);outline-offset:-1px}
+.verdict{font:600 24px/1.2 Fredoka,sans-serif;margin-top:14px}
+.verdict.ok{color:var(--good)}
+.verdict.no{color:var(--bad)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;
+  background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:12px 18px;border-radius:12px;max-width:min(560px,92vw);
+  box-shadow:0 10px 30px rgba(0,0,0,.4);transition:all .25s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.bad{border-color:var(--bad)}
+
+/* On-screen card preview (cards tab) */
+.preview{background:#fff;color:#111;border-radius:14px;padding:18px;max-width:780px;overflow-x:auto}
+.preview .sheet{height:auto;min-width:560px}
+.preview .rcard{min-height:150px}
+
+/* Print sheets: one A4 page per player, a card for each round */
+#yttest{position:fixed;left:-10000px;top:0;width:200px;height:200px}
+#print-area{display:none}
+/* 236mm tall leaves room for Safari's own margins and header/footer on A4 or Letter. */
+.sheet{height:236mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;gap:3.5mm;font-family:Inter,sans-serif;color:#111;background:#fff;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:4mm;border-bottom:2.5px solid #111;padding-bottom:2.5mm}
+.pev{font:700 18pt Fredoka,sans-serif;line-height:1.1}
+.pround{font:500 9pt Inter,sans-serif;color:#444;margin-top:1mm}
+.pcodebox{text-align:center}
+.pcodebox small{display:block;font:600 7.5pt Inter,sans-serif;text-transform:uppercase;letter-spacing:.1em;color:#444}
+.pcode{font:700 22pt Fredoka,sans-serif;letter-spacing:.12em;border:2.5px solid #111;border-radius:3mm;padding:0 4mm;white-space:nowrap}
+.rcard{flex:1;display:flex;gap:2.5mm;min-height:0}
+.rlabel{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;
+  background:#111;color:#fff;border-radius:2mm;padding:0 1.5mm;font:700 12pt Fredoka,sans-serif;letter-spacing:.06em}
+.pgrid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);border:2px solid #111}
+.pcell{border:1px solid #111;padding:1mm 1.2mm;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+  font:600 8.5pt/1.15 Inter,sans-serif;word-break:break-word;overflow:hidden}
+.pcell small{font-weight:400;font-size:7pt;color:#444;margin-top:.6mm}
+.pfoot{font:8pt Inter,sans-serif;color:#333;display:flex;justify-content:space-between;gap:4mm}
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  html{color-scheme:light;background:#fff!important}
+  body{background:#fff!important;color:#111}
+  header,main,.toast{display:none!important}
+  #print-area{display:block}
+  .sheet{break-after:page;page-break-after:always}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+}
+
+@media (max-width:900px){.cols{grid-template-columns:1fr}}
+@media (max-width:640px){
+  header{padding:10px 16px}
+  .stages{grid-template-columns:repeat(2,1fr)}
+  .nowtitle{font-size:26px}
+  .cell{font-size:10px;min-height:50px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🎵 Music <span>Bingo</span></div>
+  <nav>
+    <button class="tab" data-view="setup">1 · Setup</button>
+    <button class="tab" data-view="cards">2 · Print cards</button>
+    <button class="tab" data-view="play">3 · Play</button>
+  </nav>
+</header>
+
+<main>
+  <section id="view-setup" class="stack"></section>
+  <section id="view-cards" class="stack" hidden></section>
+  <section id="view-play" class="stack" hidden>
+    <div id="play-file-warning"></div>
+    <div id="play-head"></div>
+    <div id="play-stages" class="stages"></div>
+    <div id="play-banner"></div>
+    <div class="cols">
+      <div class="stack">
+        <div class="panel nowcard" id="now-panel">
+          <div id="now-info"></div>
+          <div class="ytbox" id="yt-wrap"><div id="yt"></div><div id="yt-side" class="muted small" style="flex:1;min-width:180px"></div></div>
+          <div id="clip-wrap"><div class="bar"><i id="clipbar"></i></div><div class="row small muted" style="margin-top:6px"><span id="cliptime"></span></div></div>
+          <div id="controls" class="row" style="margin-top:14px"></div>
+          <div id="upnext"></div>
+        </div>
+        <div class="panel" id="tick-panel"></div>
+        <div class="panel"><div class="row"><h2 style="margin:0">Songs played</h2><span class="spacer"></span><button class="btn ghost small" id="undo-btn">↩ Undo last</button></div><div id="played" class="playedlist" style="margin-top:10px"></div></div>
+      </div>
+      <div class="stack">
+        <button class="btn primary huge" id="bingo-btn">🎤 BINGO called!</button>
+        <div class="panel">
+          <h2>Check a card</h2>
+          <p class="muted small" style="margin:0 0 10px">Type the code printed on the player's sheet.</p>
+          <form id="check-form" class="stack" style="gap:10px">
+            <input id="check-input" class="codein" placeholder="K7QXM" autocomplete="off" spellcheck="false">
+            <button class="btn big primary" style="justify-content:center">Check card</button>
+          </form>
+          <div id="check-result"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="yttest"><div id="yttest-inner"></div></div>
+<div id="print-area"></div>
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+// ---------- Constants & helpers ----------
+const STAGES = [
+  {name:'5 songs',    desc:'Any 5 songs anywhere on the card'},
+  {name:'1 line',     desc:'One full horizontal line'},
+  {name:'2 lines',    desc:'Two full horizontal lines'},
+  {name:'Full house', desc:'All 15 songs'}
+];
+// Codes skip look-alike characters (0/O, 1/I/L) so they are easy to read out and type.
+const ALPH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const STORE = 'musicBingo.v1';
+
+const EXAMPLE = `# Example list - swap these for your own songs. One per line:
+# Song title - Artist | YouTube link | optional start time
+Never Gonna Give You Up - Rick Astley | https://www.youtube.com/watch?v=dQw4w9WgXcQ
+Bohemian Rhapsody - Queen | https://www.youtube.com/watch?v=fJ9rUzIMcZQ | 0:40
+Mr. Brightside - The Killers | https://www.youtube.com/watch?v=gGdGFtwCNBE
+Dancing Queen - ABBA | https://www.youtube.com/watch?v=xFrGuyw1V8s
+Africa - Toto | https://www.youtube.com/watch?v=FTQbiNvZqaY
+Take On Me - a-ha | https://www.youtube.com/watch?v=djV11Xbc914
+Don't Stop Believin' - Journey | https://www.youtube.com/watch?v=1k8craCGpgs
+Livin' on a Prayer - Bon Jovi | https://www.youtube.com/watch?v=lDK9QqIzhwk
+I Wanna Dance with Somebody - Whitney Houston | https://www.youtube.com/watch?v=eH3giaIzONA
+Wannabe - Spice Girls | https://www.youtube.com/watch?v=gJLIiF15wjQ
+Everybody (Backstreet's Back) - Backstreet Boys | https://www.youtube.com/watch?v=6M6samPEMpM
+Mamma Mia - ABBA | https://www.youtube.com/watch?v=unfzfe8f9NI
+Eye of the Tiger - Survivor | https://www.youtube.com/watch?v=btPJPFnesV4
+September - Earth, Wind & Fire | https://www.youtube.com/watch?v=Gs069dndIYk
+Billie Jean - Michael Jackson | https://www.youtube.com/watch?v=Zi_XLOBDo_Y
+Happy - Pharrell Williams | https://www.youtube.com/watch?v=ZbZSe6N_BXs
+Uptown Funk - Mark Ronson ft. Bruno Mars | https://www.youtube.com/watch?v=OPf0YbXqDm0
+Wake Me Up Before You Go-Go - Wham! | https://www.youtube.com/watch?v=pIgZ7gMze7A
+Shape of You - Ed Sheeran | https://www.youtube.com/watch?v=JGwWNGJdvx8
+Rolling in the Deep - Adele | https://www.youtube.com/watch?v=rYEDA3JcQqw
+Levitating - Dua Lipa | https://www.youtube.com/watch?v=TUVcZfQe-Kw
+Wake Me Up - Avicii | https://www.youtube.com/watch?v=IcrbM1l_BoI
+YMCA - Village People | https://www.youtube.com/watch?v=CS9OO0S5w2k
+Beat It - Michael Jackson | https://www.youtube.com/watch?v=oRdxUFDoQe0
+`;
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, kind = '') {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + kind;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.className = 'toast', 4000);
+}
+
+function hashStr(str) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  return h1 >>> 0;
+}
+function mulberry32(a) {
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------- State ----------
+function freshRoundProgress() {
+  return {played: [], skipped: [], current: null, next: null, stage: 0, winners: [], pending: false, done: false};
+}
+function defaultGame() {
+  return {
+    v: 1, name: 'Music Bingo', mode: 'youtube', clip: 30, cardsPerRound: 30, codes: [],
+    rounds: [0, 1, 2, 3].map(() => ({text: '', printedHash: null})),
+    prog: {round: 0, finished: false, rounds: [0, 1, 2, 3].map(freshRoundProgress)}
+  };
+}
+function load() {
+  try {
+    const g = JSON.parse(localStorage.getItem(STORE));
+    if (g && g.v === 1) { if (!Array.isArray(g.codes)) g.codes = []; return g; }
+  } catch (e) {}
+  return defaultGame();
+}
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(game)); } catch (e) {}
+}
+let game = load();
+
+// ---------- Song list parsing ----------
+function parseTime(t) {
+  t = String(t).trim().toLowerCase();
+  if (/^\d+$/.test(t)) return +t;
+  if (/^\d+:\d{1,2}$/.test(t)) { const [m, s] = t.split(':'); return +m * 60 + +s; }
+  const m = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0;
+}
+function parseYT(url) {
+  try {
+    const u = new URL(/^https?:\/\//i.test(url) ? url : 'https://' + url);
+    const host = u.hostname.replace(/^(www|m|music)\./, '');
+    let id = null;
+    if (host === 'youtu.be') id = u.pathname.slice(1).split('/')[0];
+    else if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+      id = u.searchParams.get('v');
+      if (!id) { const m = u.pathname.match(/\/(embed|shorts|live|v)\/([\w-]{11})/); if (m) id = m[2]; }
+    }
+    if (!id || !/^[\w-]{11}$/.test(id)) return null;
+    const t = u.searchParams.get('t') || u.searchParams.get('start');
+    return {id, start: t ? parseTime(t) : 0};
+  } catch (e) { return null; }
+}
+const parseCache = new Map();
+function parseSongs(text) {
+  if (parseCache.has(text)) return parseCache.get(text);
+  const songs = [], errors = [];
+  text.split('\n').forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) return;
+    const parts = line.split('|').map(s => s.trim());
+    let label = parts[0], url = parts[1] || '';
+    const startText = parts[2] || '';
+    if (!url) {
+      const m = label.match(/(https?:\/\/\S+)/);
+      if (m) { url = m[1]; label = label.replace(m[1], '').replace(/[\s\-–—,]+$/, '').trim(); }
+    }
+    let title = label, artist = '';
+    const dm = label.match(/^(.*?)\s+[-–—]\s+(.*)$/);
+    if (dm) { title = dm[1].trim(); artist = dm[2].trim(); }
+    const yt = url ? parseYT(url) : null;
+    if (url && !yt) errors.push(`Line ${i + 1}: couldn't read the YouTube link`);
+    songs.push({title, artist, label, id: yt ? yt.id : null, start: startText ? parseTime(startText) : (yt ? yt.start : 0), line: i + 1});
+  });
+  const res = {songs, errors};
+  parseCache.set(text, res);
+  return res;
+}
+const songsOf = r => parseSongs(game.rounds[r].text).songs;
+// Fingerprint of the song names only, so fixing a link after printing doesn't invalidate cards.
+function listHash(r) {
+  let h = hashStr(songsOf(r).map(s => s.label).join('\n')), out = '';
+  for (let i = 0; i < 3; i++) { out += ALPH[h % ALPH.length]; h = Math.floor(h / ALPH.length); }
+  return out;
+}
+
+// ---------- Player codes ----------
+// One code per player sheet: 4 random chars + 1 check char, e.g. "K7QXM".
+// Each round's card is derived from the code + round number, so nothing needs storing to check a claim.
+function checkChar(body) {
+  let s = 0;
+  for (let i = 0; i < body.length; i++) s += (i + 2) * (ALPH.indexOf(body[i]) + 1);
+  return ALPH[s % ALPH.length];
+}
+function newCode() {
+  let b = '';
+  for (let i = 0; i < 4; i++) b += ALPH[Math.floor(Math.random() * ALPH.length)];
+  return b + checkChar(b);
+}
+function parseCode(raw) {
+  const c = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (c.length !== 5) return {error: 'Codes are 5 characters, like K7QXM.'};
+  if ([...c].some(ch => !ALPH.includes(ch)) || checkChar(c.slice(0, 4)) !== c[4])
+    return {error: 'That code isn\'t valid. Check it was typed correctly (codes never use O, I, L, 0 or 1).'};
+  return {code: c};
+}
+function cardFor(code, n, r) {
+  const rng = mulberry32(hashStr(code + '#' + (r + 1)));
+  const idx = [...Array(n).keys()];
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  return idx.slice(0, 15);
+}
+function ensureCodes() {
+  while (game.codes.length < game.cardsPerRound) {
+    const c = newCode();
+    if (!game.codes.includes(c)) game.codes.push(c);
+  }
+}
+
+// ---------- Navigation ----------
+let view = 'setup', setupRound = 0, hideTitles = false, lastCheck = null;
+function setView(v) {
+  view = v;
+  document.querySelectorAll('nav .tab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  ['setup', 'cards', 'play'].forEach(x => $('#view-' + x).hidden = x !== v);
+  if (v === 'setup') renderSetup();
+  if (v === 'cards') renderCards();
+  if (v === 'play') { renderPlay(); renderCheckResult(); }
+}
+document.querySelectorAll('nav .tab').forEach(b => b.onclick = () => setView(b.dataset.view));
+
+// ---------- Setup view ----------
+function renderSetup() {
+  const g = game;
+  $('#view-setup').innerHTML = `
+    <div class="panel">
+      <h2>Game settings</h2>
+      <div class="form">
+        <label>Event name<input id="s-name" value="${esc(g.name)}"></label>
+        <label>Music source
+          <div class="seg">
+            <button data-mode="youtube" class="${g.mode === 'youtube' ? 'on' : ''}">▶ YouTube</button>
+            <button data-mode="manual" class="${g.mode === 'manual' ? 'on' : ''}">✋ Manual / jukebox</button>
+          </div>
+        </label>
+        <label ${g.mode === 'manual' ? 'hidden' : ''}>Play each song for
+          <select id="s-clip">${[20, 30, 45, 60, 90, 0].map(v => `<option value="${v}" ${+g.clip === v ? 'selected' : ''}>${v ? v + ' seconds' : 'The whole song'}</option>`).join('')}</select>
+        </label>
+        <label>Players (one sheet each)<input id="s-cards" type="number" min="1" max="500" value="${g.cardsPerRound}"></label>
+      </div>
+      <p class="muted small" style="margin:12px 0 0">${g.mode === 'youtube'
+        ? 'YouTube mode: the app plays a random song, cuts it after the clip length and moves on by itself until you press Pause or "BINGO called!".'
+        : 'Manual mode: the app tells you which song to play next on the jukebox, and you press a button as each one plays. You can also tick songs off a list in any order.'}</p>
+    </div>
+
+    <div class="panel">
+      <h2>Songs for each round</h2>
+      <div class="rtabs">${[0, 1, 2, 3].map(i => `<button class="rtab ${i === setupRound ? 'on' : ''}" data-r="${i}">Round ${i + 1}<span class="pill" id="cnt-${i}">${songsOf(i).length}</span></button>`).join('')}</div>
+      <p class="muted small" style="margin:0 0 10px">One song per line: <code>Song title - Artist | YouTube link</code>. Add <code>| 1:05</code> at the end to start at a set point (e.g. the chorus). Lines starting with <code>#</code> are ignored. Aim for 30-60 songs a round; each card shows 15.</p>
+      <textarea id="s-text" spellcheck="false" placeholder="Mr. Brightside - The Killers | https://www.youtube.com/watch?v=...">${esc(g.rounds[setupRound].text)}</textarea>
+      <div id="s-status" class="notes"></div>
+      <div class="row">
+        <button class="btn" id="s-example">Load example songs</button>
+        <button class="btn" id="s-test" ${g.mode === 'manual' ? 'hidden' : ''}>🔍 Test YouTube links</button>
+        <span class="spacer"></span>
+        <button class="btn primary" id="s-next">Next: print cards →</button>
+      </div>
+      <div id="s-testout"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Backup &amp; reset</h2>
+      <p class="muted small" style="margin:0 0 12px">Everything is saved in this browser automatically. Save a backup file to move the game to another laptop.</p>
+      <div class="row">
+        <button class="btn" id="b-export">⬇ Save backup file</button>
+        <label class="btn" style="cursor:pointer">⬆ Load backup file<input type="file" id="b-import" accept=".json,application/json" hidden></label>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="b-reset-prog">Reset game progress</button>
+        <button class="btn ghost" id="b-reset-all">Start completely fresh</button>
+      </div>
+    </div>`;
+
+  $('#s-name').oninput = e => { game.name = e.target.value; save(); };
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { game.mode = b.dataset.mode; save(); renderSetup(); });
+  $('#s-clip').onchange = e => { game.clip = +e.target.value; save(); };
+  $('#s-cards').onchange = e => { game.cardsPerRound = Math.max(1, Math.min(500, +e.target.value || 30)); e.target.value = game.cardsPerRound; save(); };
+  document.querySelectorAll('.rtab').forEach(b => b.onclick = () => { setupRound = +b.dataset.r; renderSetup(); });
+  $('#s-text').oninput = e => { game.rounds[setupRound].text = e.target.value; save(); updateSetupStatus(); };
+  $('#s-example').onclick = () => {
+    const ta = $('#s-text');
+    if (ta.value.trim() && !confirm('Replace this round\'s list with the example songs?')) return;
+    ta.value = EXAMPLE; game.rounds[setupRound].text = EXAMPLE; save(); updateSetupStatus();
+  };
+  $('#s-test').onclick = () => testLinks(setupRound);
+  $('#s-next').onclick = () => setView('cards');
+  $('#b-export').onclick = exportGame;
+  $('#b-import').onchange = importGame;
+  $('#b-reset-prog').onclick = () => {
+    if (!confirm('Reset scores and played songs for all 4 rounds? Your songs and card codes are kept.')) return;
+    stopYT(); game.prog = defaultGame().prog; lastCheck = null; save(); toast('Game progress reset.');
+  };
+  $('#b-reset-all').onclick = () => {
+    if (!confirm('Delete ALL songs, card codes and progress? This can\'t be undone (unless you saved a backup).')) return;
+    stopYT(); game = defaultGame(); lastCheck = null; save(); renderSetup();
+  };
+  updateSetupStatus();
+}
+
+function roundNotes(r) {
+  const {songs, errors} = parseSongs(game.rounds[r].text);
+  const notes = [];
+  if (!songs.length) return [{k: 'warn', t: 'No songs yet.'}];
+  if (songs.length < 15) notes.push({k: 'bad', t: `${songs.length} songs. You need at least 15 (one card holds 15).`});
+  else if (songs.length < 25) notes.push({k: 'warn', t: `${songs.length} songs. This works, but with so few songs, lots of cards will win at the same time. 30+ is better.`});
+  else notes.push({k: 'ok', t: `✓ ${songs.length} songs, good to go.`});
+  if (game.mode === 'youtube') {
+    const missing = songs.filter(s => !s.id).length;
+    if (missing) notes.push({k: 'warn', t: `${missing} song${missing > 1 ? 's have' : ' has'} no YouTube link and won't be played in YouTube mode.`});
+  }
+  errors.forEach(e => notes.push({k: 'bad', t: e}));
+  const R = game.rounds[r];
+  if (R.printedHash && R.printedHash !== listHash(r))
+    notes.push({k: 'bad', t: '⚠ The song names or order changed after you printed cards for this round. Printed cards won\'t match any more. Undo the change or reprint. (Changing only the links is fine.)'});
+  return notes;
+}
+function updateSetupStatus() {
+  $('#s-status').innerHTML = roundNotes(setupRound).map(n => `<div class="note ${n.k}">${esc(n.t)}</div>`).join('');
+  for (let i = 0; i < 4; i++) { const el = $('#cnt-' + i); if (el) el.textContent = songsOf(i).length; }
+}
+
+function exportGame() {
+  const blob = new Blob([JSON.stringify(game, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `music-bingo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importGame(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const g = JSON.parse(fr.result);
+      if (!g || g.v !== 1 || !Array.isArray(g.rounds)) throw new Error();
+      if (!Array.isArray(g.codes)) g.codes = [];
+      stopYT(); game = g; lastCheck = null; save(); renderSetup(); toast('Backup loaded.');
+    } catch (err) { toast('That file isn\'t a Music Bingo backup.', 'bad'); }
+  };
+  fr.readAsText(f);
+}
+
+// ---------- Cards view ----------
+const readyRounds = () => [0, 1, 2, 3].filter(r => songsOf(r).length >= 15);
+function sheetHTML(code, num) {
+  const cards = readyRounds().map(r => {
+    const songs = songsOf(r), card = cardFor(code, songs.length, r);
+    return `<div class="rcard"><div class="rlabel">ROUND ${r + 1}</div>
+      <div class="pgrid">${card.map(i => `<div class="pcell">${esc(songs[i].title)}${songs[i].artist ? `<small>${esc(songs[i].artist)}</small>` : ''}</div>`).join('')}</div></div>`;
+  }).join('');
+  return `<div class="sheet">
+    <div class="phead">
+      <div><div class="pev">${esc(game.name || 'Music Bingo')}</div>
+        <div class="pround">Player ${num} · Win 1: any 5 songs · Win 2: 1 line · Win 3: 2 lines · Win 4: full house</div></div>
+      <div class="pcodebox"><small>Your code</small><div class="pcode">${code}</div></div>
+    </div>
+    ${cards}
+    <div class="pfoot"><span>Keep this sheet for every round. Cross off songs as you hear them and shout BINGO when you win!</span><span>${readyRounds().map(listHash).join(' ')}</span></div>
+  </div>`;
+}
+function renderCards() {
+  const ready = readyRounds();
+  const missing = [0, 1, 2, 3].filter(r => !ready.includes(r));
+  let preview = '<p class="muted">Add at least 15 songs to a round in Setup to see a sheet.</p>';
+  if (ready.length) {
+    ensureCodes(); save();
+    preview = `<div class="preview">${sheetHTML(game.codes[0], 1)}</div>`;
+  }
+  $('#view-cards').innerHTML = `
+    <div class="panel">
+      <h2>Print the player sheets</h2>
+      <p class="muted small" style="margin:0 0 14px">Each player gets one A4 page with a 3 × 5 card for every round and one code for the whole sheet. Players cross off songs as they hear them. When someone shouts, type their code on the Play screen. The app checks the card for the round you're playing.</p>
+      ${missing.length && ready.length ? `<div class="note warn" style="margin-bottom:12px">Round ${missing.map(r => r + 1).join(', ')} ${missing.length > 1 ? 'have' : 'has'} fewer than 15 songs, so ${missing.length > 1 ? 'they' : 'it'} will be left off the sheets.</div>` : ''}
+      <div class="row">
+        <span class="muted">${game.cardsPerRound} player${game.cardsPerRound > 1 ? 's' : ''}, one page each (change in Setup)</span>
+        <span class="spacer"></span>
+        <button class="btn" id="c-newcodes">New codes</button>
+        <button class="btn primary big" id="c-print" ${ready.length ? '' : 'disabled'}>🖨 Print sheets</button>
+      </div>
+      <p class="muted small" style="margin:10px 0 0">Tip: in the print dialog, pick "Save as PDF" if you'd rather email the sheets or print them somewhere else.</p>
+    </div>
+    <div class="panel"><h2>Preview</h2>${preview}</div>`;
+  $('#c-print').onclick = printCards;
+  $('#c-newcodes').onclick = () => {
+    if (!confirm('Make new codes for every player? Old printed sheets still check fine, but the app will flag them as "not from your latest print".')) return;
+    game.codes = []; save(); renderCards();
+  };
+}
+function printCards() {
+  const ready = readyRounds();
+  if (!ready.length) return;
+  ensureCodes();
+  ready.forEach(r => { game.rounds[r].printedHash = listHash(r); });
+  save();
+  $('#print-area').innerHTML = game.codes.slice(0, game.cardsPerRound).map((c, i) => sheetHTML(c, i + 1)).join('');
+  setTimeout(() => window.print(), 50);
+}
+
+// ---------- Play view ----------
+const P = () => game.prog;
+const curRoundIdx = () => P().round;
+const curR = () => P().rounds[P().round];
+const curSongs = () => songsOf(P().round);
+
+function pickNext(R, n, exclude = []) {
+  const used = new Set([...R.played, ...R.skipped, ...exclude]);
+  const pool = [];
+  for (let i = 0; i < n; i++) if (!used.has(i)) pool.push(i);
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+}
+function songText(s) { return s ? `${esc(s.title)}${s.artist ? ` <span class="muted">- ${esc(s.artist)}</span>` : ''}` : ''; }
+
+function renderPlay() {
+  if (view !== 'play') return;
+  const r = curRoundIdx(), R = curR(), songs = curSongs(), yt = game.mode === 'youtube';
+  const playable = songs.length >= 15;
+  const locked = R.pending || R.done || P().finished;
+
+  $('#play-file-warning').innerHTML = yt && location.protocol === 'file:'
+    ? `<div class="note bad">⚠ This page was opened straight from the file, so YouTube won't play. Open it with the <b>Start Music Bingo</b> launcher instead (it opens <code>http://localhost:8765</code>).</div>` : '';
+
+  $('#play-head').innerHTML = `
+    <div class="playhead">
+      <h1>Round ${r + 1} <span class="muted" style="font-size:18px">of 4</span></h1>
+      <span class="pill" style="font-size:13px;padding:3px 10px">${yt ? '▶ YouTube' : '✋ Manual'}</span>
+      <span class="spacer"></span>
+      <label class="row small muted" style="gap:6px;cursor:pointer"><input type="checkbox" id="hide-t" ${hideTitles ? 'checked' : ''}> Hide song names (if players can see this screen)</label>
+      <button class="btn ghost" id="prev-round" ${r === 0 ? 'disabled' : ''}>← Previous round</button>
+      <button class="btn ghost" id="next-round" ${r === 3 ? 'disabled' : ''}>Next round →</button>
+    </div>`;
+  $('#hide-t').onchange = e => { hideTitles = e.target.checked; document.body.classList.toggle('hidetitles', hideTitles); };
+  $('#prev-round').onclick = () => switchRound(r - 1);
+  $('#next-round').onclick = () => switchRound(r + 1);
+
+  $('#play-stages').innerHTML = STAGES.map((s, i) => {
+    const w = R.winners.filter(x => x.stage === i).map(x => x.code);
+    const cls = i < R.stage || (i === R.stage && R.pending) ? 'done' : (i === R.stage && !R.done ? 'now' : '');
+    return `<div class="stage ${cls}"><div class="n">Win ${i + 1}${i === R.stage && !R.done ? ' · now playing for' : ''}</div><div class="t">${s.name}</div><div class="muted small">${s.desc}</div>${w.length ? `<div class="w">🏆 ${w.join(', ')}</div>` : ''}</div>`;
+  }).join('');
+
+  // Banner: confirmed winner / round done / game over
+  let banner = '';
+  if (P().finished) {
+    banner = `<div class="banner"><h3>🎉 That's all 4 rounds!</h3><div>${P().rounds.map((pr, i) => `Round ${i + 1}: ${STAGES.map((s, k) => `${s.name} ${pr.winners.filter(w => w.stage === k).map(w => w.code).join(', ') || '-'}`).join(' · ')}`).join('<br>')}</div></div>`;
+  } else if (R.done) {
+    banner = `<div class="banner"><h3>🏁 Round ${r + 1} complete! Full house won by ${R.winners.filter(w => w.stage === 3).map(w => w.code).join(', ')}</h3>
+      <p class="muted" style="margin:4px 0 12px">Check any other full-house claims first, then move on.</p>
+      <button class="btn good big" id="continue-btn">${r < 3 ? `Start Round ${r + 2} →` : 'Finish the game 🎉'}</button></div>`;
+  } else if (R.pending) {
+    const w = R.winners.filter(x => x.stage === R.stage).map(x => x.code).join(', ');
+    banner = `<div class="banner"><h3>🏆 ${STAGES[R.stage].name} won by ${w}</h3>
+      <p class="muted" style="margin:4px 0 12px">Anyone else claiming ${STAGES[R.stage].name}? Check their cards now. Then carry on to the next win: <b>${STAGES[R.stage + 1].name}</b>.</p>
+      <button class="btn good big" id="continue-btn">▶ Continue: play for ${STAGES[R.stage + 1].name}</button></div>`;
+  }
+  $('#play-banner').innerHTML = banner;
+  if ($('#continue-btn')) $('#continue-btn').onclick = continueGame;
+
+  // Now playing
+  const cur = R.current != null ? songs[R.current] : null;
+  $('#now-info').innerHTML = !playable
+    ? `<div class="nowlabel">Not ready</div><div class="nowtitle" style="font-size:24px">Round ${r + 1} needs at least 15 songs.</div><p><button class="btn" onclick="setupRound=${r};setView('setup')">Go to Setup</button></p>`
+    : `<div class="nowlabel">${cur ? 'Now playing · song ' + R.played.length + ' of ' + songs.length : 'Ready'}</div>
+       <div class="nowtitle">${cur ? esc(cur.title) : (yt ? 'Press Play to start' : 'Press "Play this one" to start')}</div>
+       <div class="nowartist">${cur ? esc(cur.artist) : esc(STAGES[R.stage].desc + ' wins first')}</div>`;
+
+  $('#yt-wrap').hidden = !yt || !playable;
+  $('#clip-wrap').hidden = !yt || !playable;
+  $('#yt-side').innerHTML = !ytReady ? 'Loading the YouTube player…'
+    : `Songs keep playing one after another until you press Pause or <b>BINGO called!</b>.<br>${game.clip ? `Each song plays for ${game.clip} seconds.` : 'Each song plays to the end.'}`;
+
+  // Controls
+  const c = $('#controls');
+  if (!playable) c.innerHTML = '';
+  else if (yt) {
+    c.innerHTML = `
+      ${ytPlaying ? `<button class="btn big" id="yt-pause">⏸ Pause</button>` : `<button class="btn primary big" id="yt-play" ${locked || !ytReady ? 'disabled' : ''}>▶ ${R.current == null ? 'Play' : 'Resume'}</button>`}
+      <button class="btn big" id="yt-next" ${locked || !ytReady ? 'disabled' : ''}>⏭ Next song</button>`;
+    if ($('#yt-pause')) $('#yt-pause').onclick = ytPause;
+    if ($('#yt-play')) $('#yt-play').onclick = ytPlay;
+    $('#yt-next').onclick = ytNext;
+  } else c.innerHTML = '';
+
+  // Manual: up next
+  if (!yt && playable && !locked) {
+    if (R.next == null || R.played.includes(R.next) || R.skipped.includes(R.next)) { R.next = pickNext(R, songs.length); save(); }
+    const nx = R.next != null ? songs[R.next] : null;
+    $('#upnext').innerHTML = nx
+      ? `<div class="upnext"><div class="nowlabel" style="color:var(--warn)">Up next: play this on the jukebox</div>
+         <div class="t" style="margin:4px 0 10px">${songText(nx)}</div>
+         <div class="row"><button class="btn primary big" id="m-play">▶ Play this one</button><button class="btn" id="m-reroll">🔀 Pick a different song</button></div></div>`
+      : `<div class="upnext muted">All songs in this round have been played.</div>`;
+    if ($('#m-play')) $('#m-play').onclick = manPlayNext;
+    if ($('#m-reroll')) $('#m-reroll').onclick = manReroll;
+  } else $('#upnext').innerHTML = '';
+
+  // Manual: tick list
+  const tp = $('#tick-panel');
+  tp.hidden = yt || !playable;
+  if (!yt && playable) {
+    const played = new Set(R.played);
+    tp.innerHTML = `<h2 style="margin:0">Tick songs as they play</h2>
+      <p class="muted small" style="margin:4px 0 0">If the jukebox plays songs in its own order, tick them here instead.</p>
+      <div class="ticklist">${songs.map((s, i) => `<label class="${played.has(i) ? 'on' : ''}"><input type="checkbox" data-i="${i}" ${played.has(i) ? 'checked' : ''} ${locked ? 'disabled' : ''}><span>${songText(s)}</span></label>`).join('')}</div>`;
+    tp.querySelectorAll('input[data-i]').forEach(cb => cb.onchange = () => manToggle(+cb.dataset.i, cb));
+  }
+
+  // Played list
+  $('#played').innerHTML = R.played.length
+    ? R.played.map((i, n) => ({i, n})).reverse().map(({i, n}) => `<div><b>${n + 1}</b><span>${songText(songs[i])}</span></div>`).join('')
+    : '<span class="muted">Nothing played yet.</span>';
+  $('#undo-btn').disabled = !R.played.length || locked;
+  $('#bingo-btn').disabled = !playable || P().finished;
+}
+
+function switchRound(r) {
+  if (r < 0 || r > 3) return;
+  stopYT();
+  P().round = r; P().finished = false; lastCheck = null; save();
+  renderPlay(); renderCheckResult();
+}
+function continueGame() {
+  const R = curR();
+  lastCheck = null; $('#check-input').value = '';
+  if (R.done) {
+    stopYT();
+    if (P().round < 3) P().round++;
+    else P().finished = true;
+    save(); renderPlay(); renderCheckResult();
+    return;
+  }
+  R.stage++; R.pending = false; save();
+  renderPlay(); renderCheckResult();
+  if (game.mode === 'youtube') ytNext();
+}
+$('#undo-btn').onclick = () => {
+  const R = curR();
+  if (!R.played.length) return;
+  const i = R.played.pop();
+  if (game.mode === 'youtube' && i === R.current) { stopYT(); }
+  R.current = R.played.length ? R.played[R.played.length - 1] : null;
+  save(); renderPlay();
+  toast('Removed: ' + curSongs()[i].label);
+};
+$('#bingo-btn').onclick = () => {
+  if (game.mode === 'youtube') ytPause();
+  $('#check-input').focus();
+  $('#check-input').select();
+};
+
+// Manual mode
+function manPlayNext() {
+  const R = curR();
+  if (R.next == null) return;
+  R.played.push(R.next); R.current = R.next;
+  R.next = pickNext(R, curSongs().length);
+  save(); renderPlay();
+}
+function manReroll() {
+  const R = curR();
+  const n = pickNext(R, curSongs().length, [R.next]);
+  if (n == null) { toast('That\'s the only song left.'); return; }
+  R.next = n; save(); renderPlay();
+}
+function manToggle(i, cb) {
+  const R = curR();
+  if (R.played.includes(i)) {
+    if (!confirm('Untick "' + curSongs()[i].label + '"? Only do this if it was ticked by mistake.')) { cb.checked = true; return; }
+    R.played = R.played.filter(x => x !== i);
+    R.current = R.played.length ? R.played[R.played.length - 1] : null;
+  } else {
+    R.played.push(i); R.current = i;
+    if (R.next === i) R.next = pickNext(R, curSongs().length);
+  }
+  save(); renderPlay();
+}
+
+// ---------- YouTube ----------
+let player = null, ytReady = false, ytPlaying = false, loadedIdx = null, testPlayer = null, testCb = null;
+const YT_ERRORS = {
+  2: 'the link is broken', 5: 'the browser can\'t play it', 100: 'the video was removed or is private',
+  101: 'the owner doesn\'t allow it to play on other sites', 150: 'the owner doesn\'t allow it to play on other sites',
+  153: 'the page must be opened through the launcher (localhost), not as a file'
+};
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player('yt', {
+    width: 320, height: 180,
+    playerVars: {playsinline: 1, rel: 0, modestbranding: 1},
+    events: {
+      onReady: () => { ytReady = true; renderPlay(); },
+      onStateChange: e => {
+        if (e.data === YT.PlayerState.ENDED && ytPlaying) ytNext();
+        else if (e.data === YT.PlayerState.PLAYING && !ytPlaying) { ytPlaying = true; renderPlay(); }
+        else if (e.data === YT.PlayerState.PAUSED && ytPlaying) { ytPlaying = false; renderPlay(); }
+      },
+      onError: e => onYTError(e.data)
+    }
+  });
+  testPlayer = new YT.Player('yttest-inner', {
+    width: 200, height: 200, playerVars: {mute: 1, playsinline: 1},
+    events: {
+      onStateChange: e => { if (e.data === YT.PlayerState.PLAYING && testCb) { testCb('ok'); e.target.pauseVideo(); } },
+      onError: e => testCb && testCb(e.data)
+    }
+  });
+};
+(function loadYTApi() {
+  const s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  s.onerror = () => toast('Couldn\'t reach YouTube. Check the internet connection.', 'bad');
+  document.head.appendChild(s);
+})();
+
+function ytNext() {
+  const R = curR(), songs = curSongs();
+  if (!ytReady || R.pending || R.done) return;
+  let i = pickNext(R, songs.length);
+  while (i != null && !songs[i].id) { R.skipped.push(i); i = pickNext(R, songs.length); }
+  if (i == null) { stopYT(); save(); renderPlay(); toast('Every song in this round has been played.'); return; }
+  R.played.push(i); R.current = i; save();
+  loadedIdx = i; ytPlaying = true;
+  player.setVolume(100);
+  player.loadVideoById({videoId: songs[i].id, startSeconds: songs[i].start || 0});
+  renderPlay();
+}
+function ytPlay() {
+  const R = curR();
+  if (!ytReady || R.pending || R.done) return;
+  if (R.current == null) return ytNext();
+  ytPlaying = true;
+  if (loadedIdx !== R.current) {
+    const s = curSongs()[R.current];
+    loadedIdx = R.current;
+    player.setVolume(100);
+    player.loadVideoById({videoId: s.id, startSeconds: s.start || 0});
+  } else player.playVideo();
+  renderPlay();
+}
+function ytPause() {
+  ytPlaying = false;
+  if (player && ytReady) player.pauseVideo();
+  renderPlay();
+}
+function stopYT() {
+  ytPlaying = false; loadedIdx = null;
+  if (player && ytReady) player.stopVideo();
+  $('#clipbar').style.width = '0';
+  $('#cliptime').textContent = '';
+}
+function onYTError(code) {
+  const R = curR(), songs = curSongs(), i = R.current;
+  if (i == null) return;
+  R.played = R.played.filter(x => x !== i);
+  R.skipped.push(i);
+  R.current = R.played.length ? R.played[R.played.length - 1] : null;
+  loadedIdx = null; save();
+  toast(`Skipped "${songs[i].label}": ${YT_ERRORS[code] || 'YouTube error ' + code}. Swap its link in Setup.`, 'bad');
+  if (ytPlaying && code !== 153) ytNext(); else { ytPlaying = false; renderPlay(); }
+}
+// Clip timer: cuts each song after the clip length, with a short fade-out.
+setInterval(() => {
+  if (!ytReady || !player || game.mode !== 'youtube') return;
+  const R = curR();
+  if (!ytPlaying || R.current == null || loadedIdx !== R.current) return;
+  if (player.getPlayerState() !== YT.PlayerState.PLAYING) return;
+  const s = curSongs()[R.current];
+  const el = Math.max(0, player.getCurrentTime() - (s.start || 0));
+  const total = game.clip || Math.max(1, player.getDuration() - (s.start || 0));
+  $('#clipbar').style.width = Math.min(100, el / total * 100) + '%';
+  $('#cliptime').textContent = `${Math.floor(el)}s / ${Math.round(total)}s`;
+  if (game.clip) {
+    const left = game.clip - el;
+    if (left < 2) player.setVolume(Math.max(0, left / 2 * 100));
+    if (left <= 0) ytNext();
+  }
+}, 250);
+
+async function testLinks(r) {
+  const out = $('#s-testout');
+  if (!ytReady || !testPlayer) { out.innerHTML = '<div class="note warn">The YouTube player is still loading. Try again in a moment.</div>'; return; }
+  if (location.protocol === 'file:') { out.innerHTML = '<div class="note bad">Open the app with the launcher first (localhost). YouTube won\'t play from a file.</div>'; return; }
+  const songs = songsOf(r).filter(s => s.id);
+  if (!songs.length) { out.innerHTML = '<div class="note warn">No YouTube links in this round yet.</div>'; return; }
+  $('#s-test').disabled = true;
+  const bad = [];
+  out.innerHTML = `<div class="note">Testing <span id="t-n">0</span> of ${songs.length}…</div><div class="testlist" id="t-list"></div>`;
+  for (let k = 0; k < songs.length; k++) {
+    const s = songs[k];
+    const res = await new Promise(resolve => {
+      let done = false;
+      const t = setTimeout(() => fin('timeout'), 12000);
+      function fin(v) { if (done) return; done = true; clearTimeout(t); testCb = null; resolve(v); }
+      testCb = fin;
+      testPlayer.mute();
+      testPlayer.loadVideoById({videoId: s.id});
+    });
+    if ($('#t-n')) $('#t-n').textContent = k + 1;
+    if (res !== 'ok') {
+      bad.push(s);
+      const why = res === 'timeout' ? 'didn\'t start (slow internet or blocked)' : (YT_ERRORS[res] || 'error ' + res);
+      if ($('#t-list')) $('#t-list').insertAdjacentHTML('beforeend', `<div>❌ Line ${s.line}: ${esc(s.label)}: ${esc(why)}</div>`);
+    }
+  }
+  testPlayer.stopVideo();
+  $('#s-test').disabled = false;
+  out.querySelector('.note').className = 'note ' + (bad.length ? 'bad' : 'ok');
+  out.querySelector('.note').textContent = bad.length
+    ? `${songs.length - bad.length} of ${songs.length} links work. Replace the ones below (try a "lyrics" or "official audio" upload of the same song).`
+    : `✓ All ${songs.length} links play fine.`;
+}
+
+// ---------- Checking a claim ----------
+$('#check-form').onsubmit = e => {
+  e.preventDefault();
+  const raw = $('#check-input').value;
+  if (!raw.trim()) return;
+  const pc = parseCode(raw);
+  const r = curRoundIdx(), R = curR(), songs = curSongs();
+  if (pc.error) lastCheck = {error: pc.error};
+  else if (songs.length < 15) lastCheck = {error: 'This round needs at least 15 songs.'};
+  else {
+    const card = cardFor(pc.code, songs.length, r);
+    const played = new Set(R.played);
+    const marks = card.map(i => played.has(i));
+    const rows = [0, 1, 2].map(k => marks.slice(k * 5, k * 5 + 5).filter(Boolean).length);
+    const count = marks.filter(Boolean).length;
+    const full = rows.filter(n => n === 5).length;
+    const stage = R.done ? 3 : R.stage;
+    const ok = [count >= 5, full >= 1, full >= 2, count === 15][stage];
+    let msg;
+    if (ok) msg = `✅ Valid! ${STAGES[stage].name}`;
+    else if (stage === 0) msg = `❌ Not yet. Only ${count} of 5 songs have played.`;
+    else if (stage === 1) msg = `❌ No full line yet. Best line has ${Math.max(...rows)} of 5.`;
+    else if (stage === 2) msg = `❌ ${full} full line${full === 1 ? '' : 's'}, needs 2.`;
+    else msg = `❌ ${count} of 15. ${15 - count} still to play.`;
+    lastCheck = {
+      code: pc.code, card, marks, rows, ok, msg, stage, current: R.current,
+      issued: game.codes.includes(pc.code),
+      already: R.winners.some(w => w.code === pc.code && w.stage === stage)
+    };
+  }
+  renderCheckResult();
+};
+function renderCheckResult() {
+  const box = $('#check-result');
+  const c = lastCheck;
+  if (!c) { box.innerHTML = ''; return; }
+  if (c.error) { box.innerHTML = `<div class="verdict no">${esc(c.error)}</div>`; return; }
+  const songs = curSongs(), R = curR();
+  const canConfirm = c.ok && !c.already && c.stage === (R.done ? 3 : R.stage);
+  box.innerHTML = `
+    <div class="cgrid">${c.card.map((i, k) => `<div class="cell ${c.marks[k] ? 'hit' : ''} ${c.rows[Math.floor(k / 5)] === 5 ? 'rowfull' : ''} ${i === c.current ? 'last' : ''}">${esc(songs[i].title)}${songs[i].artist ? `<small>${esc(songs[i].artist)}</small>` : ''}</div>`).join('')}</div>
+    <div class="small muted" style="margin-top:6px">Round ${curRoundIdx() + 1} card for ${c.code} · green = played${c.current != null && c.card.includes(c.current) ? ' · yellow outline = the song playing now' : ''}</div>
+    <div class="verdict ${c.ok ? 'ok' : 'no'}">${esc(c.msg)}</div>
+    ${!c.issued ? '<div class="note warn" style="margin-top:8px">Heads up: this code isn\'t one from your latest print. It could be an old printout.</div>' : ''}
+    ${c.already ? '<div class="note ok" style="margin-top:8px">Already confirmed as a winner for this.</div>' : ''}
+    <div class="row" style="margin-top:12px">
+      ${canConfirm ? `<button class="btn good big" id="confirm-btn">🏆 Confirm winner</button>` : ''}
+      ${!c.ok && game.mode === 'youtube' && !R.pending && !R.done ? `<button class="btn big" id="resume-btn">▶ Not a win, keep playing</button>` : ''}
+      <button class="btn ghost" id="clear-check">Clear</button>
+    </div>`;
+  if ($('#confirm-btn')) $('#confirm-btn').onclick = () => {
+    R.winners.push({code: c.code, stage: c.stage, songs: R.played.length});
+    R.pending = true;
+    if (c.stage === 3) R.done = true;
+    c.already = true; save();
+    if (game.mode === 'youtube') ytPause();
+    renderPlay(); renderCheckResult();
+    $('#check-input').value = '';
+  };
+  if ($('#resume-btn')) $('#resume-btn').onclick = () => { lastCheck = null; $('#check-input').value = ''; renderCheckResult(); ytPlay(); };
+  $('#clear-check').onclick = () => { lastCheck = null; $('#check-input').value = ''; renderCheckResult(); };
+}
+
+// ---------- Start ----------
+setView(songsOf(0).length >= 15 && game.codes.length ? 'play' : 'setup');
+</script>
+</body>
+</html>
