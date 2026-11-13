@@ -740,9 +740,17 @@ $('#undo-btn').onclick = () => {
   save(); renderPlay();
   toast('Removed: ' + curSongs()[i].label);
 };
+// Real recording: put a file called bingo.mp3 next to index.html. If it's missing, the browser's voice is used.
+const bingoSound = new Audio('bingo.mp3');
+let bingoSoundOk = null;
+bingoSound.preload = 'auto';
+bingoSound.addEventListener('canplaythrough', () => { bingoSoundOk = true; }, {once: true});
+bingoSound.addEventListener('error', () => { bingoSoundOk = false; }, {once: true});
 function shoutBingo() {
-  // Say it out loud with the browser's built-in voice
-  try {
+  if (bingoSoundOk) {
+    try { bingoSound.currentTime = 0; bingoSound.play().catch(() => {}); } catch (e) {}
+  } else try {
+    // No recording found: say it out loud with the browser's built-in voice
     const synth = window.speechSynthesis;
     if (synth) {
       synth.cancel();
