@@ -5,8 +5,11 @@ A music bingo game for work nights: 4 rounds, a 3 × 5 card per round, and four 
 the host types the code to check a claim.
 
 ## Run it
-- **Mac:** double-click `music-bingo/Start Music Bingo.command` (first time: right-click → Open).
-- **Windows:** double-click `music-bingo/Start Music Bingo (Windows).bat` (needs Python).
+**Online (easiest):** open https://kacper123272.github.io/music-bingo/ — works on any laptop, nothing to install.
+
+**Offline / local:**
+- **Mac:** double-click `Start Music Bingo.command` (first time: right-click → Open).
+- **Windows:** double-click `Start Music Bingo (Windows).bat` (needs Python from python.org).
 - Don't open `index.html` directly — YouTube won't play from a file.
 
 ## Use it
