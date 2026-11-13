@@ -740,28 +740,36 @@ $('#undo-btn').onclick = () => {
   save(); renderPlay();
   toast('Removed: ' + curSongs()[i].label);
 };
-// Real recording: put a file called bingo.mp3 next to index.html. It's downloaded and decoded when the
-// page opens so it plays instantly. If the file is missing, the browser's voice is used instead.
+// Sound effects: bingo.mp3 (BINGO pressed) and no-bingo.mp3 (a checked code isn't a win) sit next to
+// index.html. They're downloaded and decoded when the page opens so they play instantly.
 const AC = window.AudioContext || window.webkitAudioContext;
-const bingoCtx = AC ? new AC() : null;
-let bingoBuf = null, bingoState = 'loading';  // loading | ready | missing
-fetch('bingo.mp3')
-  .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
-  .then(b => new Promise((ok, bad) => bingoCtx.decodeAudioData(b, ok, bad)))
-  .then(buf => { bingoBuf = buf; bingoState = 'ready'; })
-  .catch(() => { bingoState = 'missing'; });
-// Unlock audio on the first tap/click anywhere, so the first BINGO isn't delayed
-document.addEventListener('pointerdown', () => { if (bingoCtx && bingoCtx.state === 'suspended') bingoCtx.resume(); }, {once: true, capture: true});
+const sfxCtx = AC ? new AC() : null;
+function loadSound(file) {
+  const snd = {file, buf: null, state: 'loading'};  // loading | ready | missing
+  fetch(file)
+    .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(b => new Promise((ok, bad) => sfxCtx.decodeAudioData(b, ok, bad)))
+    .then(buf => { snd.buf = buf; snd.state = 'ready'; })
+    .catch(() => { snd.state = 'missing'; });
+  return snd;
+}
+// Returns false if the file is missing, so the caller can fall back to something else.
+function playSound(snd) {
+  if (snd.state === 'missing') return false;
+  try {
+    if (snd.state === 'ready') {
+      if (sfxCtx.state === 'suspended') sfxCtx.resume();
+      const src = sfxCtx.createBufferSource();
+      src.buffer = snd.buf; src.connect(sfxCtx.destination); src.start(0);
+    } else new Audio(snd.file).play().catch(() => {});
+  } catch (e) {}
+  return true;
+}
+const bingoSnd = loadSound('bingo.mp3'), noBingoSnd = loadSound('no-bingo.mp3');
+// Unlock audio on the first tap/click anywhere, so the first sound isn't delayed
+document.addEventListener('pointerdown', () => { if (sfxCtx && sfxCtx.state === 'suspended') sfxCtx.resume(); }, {once: true, capture: true});
 function shoutBingo() {
-  if (bingoState === 'ready') {
-    try {
-      if (bingoCtx.state === 'suspended') bingoCtx.resume();
-      const src = bingoCtx.createBufferSource();
-      src.buffer = bingoBuf; src.connect(bingoCtx.destination); src.start(0);
-    } catch (e) {}
-  } else if (bingoState === 'loading') {
-    try { new Audio('bingo.mp3').play().catch(() => {}); } catch (e) {}
-  } else try {
+  if (!playSound(bingoSnd)) try {
     // No recording found: say it out loud with the browser's built-in voice
     const synth = window.speechSynthesis;
     if (synth) {
@@ -996,6 +1004,7 @@ $('#check-form').onsubmit = e => {
       already: R.winners.some(w => w.code === pc.code && w.stage === stage)
     };
   }
+  if (lastCheck && !lastCheck.error && !lastCheck.ok) playSound(noBingoSnd);
   renderCheckResult();
 };
 function renderCheckResult() {
