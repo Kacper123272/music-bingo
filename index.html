@@ -740,7 +740,8 @@ $('#undo-btn').onclick = () => {
   save(); renderPlay();
   toast('Removed: ' + curSongs()[i].label);
 };
-// Sound effects: bingo.mp3 (BINGO pressed) and no-bingo.mp3 (a checked code isn't a win) sit next to
+// Sound effects: bingo.mp3 (BINGO pressed), win.mp3 (a checked code is a valid win) and no-bingo.mp3
+// (a checked code isn't a win) sit next to
 // index.html. They're downloaded and decoded when the page opens so they play instantly.
 const AC = window.AudioContext || window.webkitAudioContext;
 const sfxCtx = AC ? new AC() : null;
@@ -765,7 +766,7 @@ function playSound(snd) {
   } catch (e) {}
   return true;
 }
-const bingoSnd = loadSound('bingo.mp3'), noBingoSnd = loadSound('no-bingo.mp3');
+const bingoSnd = loadSound('bingo.mp3'), noBingoSnd = loadSound('no-bingo.mp3'), winSnd = loadSound('win.mp3');
 // Unlock audio on the first tap/click anywhere, so the first sound isn't delayed
 document.addEventListener('pointerdown', () => { if (sfxCtx && sfxCtx.state === 'suspended') sfxCtx.resume(); }, {once: true, capture: true});
 function shoutBingo() {
@@ -1004,7 +1005,7 @@ $('#check-form').onsubmit = e => {
       already: R.winners.some(w => w.code === pc.code && w.stage === stage)
     };
   }
-  if (lastCheck && !lastCheck.error && !lastCheck.ok) playSound(noBingoSnd);
+  if (lastCheck && !lastCheck.error) playSound(lastCheck.ok ? winSnd : noBingoSnd);
   renderCheckResult();
 };
 function renderCheckResult() {
