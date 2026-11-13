@@ -228,7 +228,7 @@ const ALPH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const STORE = 'musicBingo.v1';
 
 const EXAMPLE = `# Example list - swap these for your own songs. One per line:
-# Song title - Artist | YouTube link | optional start time
+# Song title - Artist | YouTube link | optional start time (e.g. 1:05, or mid for halfway)
 Never Gonna Give You Up - Rick Astley | https://www.youtube.com/watch?v=dQw4w9WgXcQ
 Bohemian Rhapsody - Queen | https://www.youtube.com/watch?v=fJ9rUzIMcZQ | 0:40
 Mr. Brightside - The Killers | https://www.youtube.com/watch?v=gGdGFtwCNBE
@@ -350,7 +350,7 @@ function parseSongs(text) {
     if (dm) { title = dm[1].trim(); artist = dm[2].trim(); }
     const yt = url ? parseYT(url) : null;
     if (url && !yt) errors.push(`Line ${i + 1}: couldn't read the YouTube link`);
-    songs.push({title, artist, label, id: yt ? yt.id : null, start: startText ? parseTime(startText) : (yt ? yt.start : 0), line: i + 1});
+    songs.push({title, artist, label, id: yt ? yt.id : null, start: /^(mid|middle)$/i.test(startText) ? 'mid' : startText ? parseTime(startText) : (yt ? yt.start : 0), line: i + 1});
   });
   const res = {songs, errors};
   parseCache.set(text, res);
@@ -436,7 +436,7 @@ function renderSetup() {
     <div class="panel">
       <h2>Songs for each round</h2>
       <div class="rtabs">${[0, 1, 2, 3].map(i => `<button class="rtab ${i === setupRound ? 'on' : ''}" data-r="${i}">Round ${i + 1}<span class="pill" id="cnt-${i}">${songsOf(i).length}</span></button>`).join('')}</div>
-      <p class="muted small" style="margin:0 0 10px">One song per line: <code>Song title - Artist | YouTube link</code>. Add <code>| 1:05</code> at the end to start at a set point (e.g. the chorus). Lines starting with <code>#</code> are ignored. Aim for 30-60 songs a round; each card shows 15.</p>
+      <p class="muted small" style="margin:0 0 10px">One song per line: <code>Song title - Artist | YouTube link</code>. Add <code>| 1:05</code> at the end to start at a set point (e.g. the chorus), or <code>| mid</code> to start halfway through the video. Lines starting with <code>#</code> are ignored. Aim for 30-60 songs a round; each card shows 15.</p>
       <textarea id="s-text" spellcheck="false" placeholder="Mr. Brightside - The Killers | https://www.youtube.com/watch?v=...">${esc(g.rounds[setupRound].text)}</textarea>
       <div id="s-status" class="notes"></div>
       <div class="row">
@@ -767,6 +767,24 @@ function manToggle(i, cb) {
 
 // ---------- YouTube ----------
 let player = null, ytReady = false, ytPlaying = false, loadedIdx = null, testPlayer = null, testCb = null;
+// curStart: where the loaded song's clip starts (seconds). midSeek: waiting to jump to the middle ('| mid').
+let curStart = 0, midSeek = false;
+function loadSong(s) {
+  midSeek = s.start === 'mid';
+  curStart = midSeek ? 0 : (s.start || 0);
+  player.setVolume(midSeek ? 0 : 100);  // stay silent until we've jumped to the middle
+  player.loadVideoById({videoId: s.id, startSeconds: curStart});
+}
+function doMidSeek() {
+  if (!midSeek) return true;
+  const d = player.getDuration();
+  if (!(d > 0)) return false;
+  midSeek = false;
+  curStart = Math.floor(d / 2);
+  player.seekTo(curStart, true);
+  player.setVolume(100);
+  return false;
+}
 const YT_ERRORS = {
   2: 'the link is broken', 5: 'the browser can\'t play it', 100: 'the video was removed or is private',
   101: 'the owner doesn\'t allow it to play on other sites', 150: 'the owner doesn\'t allow it to play on other sites',
@@ -779,6 +797,7 @@ window.onYouTubeIframeAPIReady = () => {
     events: {
       onReady: () => { ytReady = true; renderPlay(); },
       onStateChange: e => {
+        if (e.data === YT.PlayerState.PLAYING) doMidSeek();
         if (e.data === YT.PlayerState.ENDED && ytPlaying) ytNext();
         else if (e.data === YT.PlayerState.PLAYING && !ytPlaying) { ytPlaying = true; renderPlay(); }
         else if (e.data === YT.PlayerState.PAUSED && ytPlaying) { ytPlaying = false; renderPlay(); }
@@ -809,8 +828,7 @@ function ytNext() {
   if (i == null) { stopYT(); save(); renderPlay(); toast('Every song in this round has been played.'); return; }
   R.played.push(i); R.current = i; save();
   loadedIdx = i; ytPlaying = true;
-  player.setVolume(100);
-  player.loadVideoById({videoId: songs[i].id, startSeconds: songs[i].start || 0});
+  loadSong(songs[i]);
   renderPlay();
 }
 function ytPlay() {
@@ -821,8 +839,7 @@ function ytPlay() {
   if (loadedIdx !== R.current) {
     const s = curSongs()[R.current];
     loadedIdx = R.current;
-    player.setVolume(100);
-    player.loadVideoById({videoId: s.id, startSeconds: s.start || 0});
+    loadSong(s);
   } else player.playVideo();
   renderPlay();
 }
@@ -853,9 +870,9 @@ setInterval(() => {
   const R = curR();
   if (!ytPlaying || R.current == null || loadedIdx !== R.current) return;
   if (player.getPlayerState() !== YT.PlayerState.PLAYING) return;
-  const s = curSongs()[R.current];
-  const el = Math.max(0, player.getCurrentTime() - (s.start || 0));
-  const total = game.clip || Math.max(1, player.getDuration() - (s.start || 0));
+  if (!doMidSeek()) return;
+  const el = Math.max(0, player.getCurrentTime() - curStart);
+  const total = game.clip || Math.max(1, player.getDuration() - curStart);
   $('#clipbar').style.width = Math.min(100, el / total * 100) + '%';
   $('#cliptime').textContent = `${Math.floor(el)}s / ${Math.round(total)}s`;
   if (game.clip) {
