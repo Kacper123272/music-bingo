@@ -180,7 +180,9 @@ textarea{width:100%;min-height:340px;resize:vertical;font:13.5px/1.6 ui-monospac
 .preview .rcard{min-height:150px}
 
 /* Print sheets: one A4 page per player, a card for each round */
-#yttest,#walkup-host{position:fixed;left:-10000px;top:0;width:200px;height:200px}
+#yttest{position:fixed;left:-10000px;top:0;width:200px;height:200px}
+/* Kept inside the window (just invisible) so Chrome doesn't throttle it like an off-screen frame */
+#walkup-host{position:fixed;right:0;bottom:0;width:200px;height:200px;opacity:0;pointer-events:none;z-index:-1}
 #print-area{display:none}
 /* 236mm tall leaves room for Safari's own margins and header/footer on A4 or Letter. */
 .sheet{height:236mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;gap:3.5mm;font-family:var(--ui);color:#111;background:#fff;
@@ -348,7 +350,7 @@ function freshRoundProgress() {
 }
 // Walk-up music: plays after "Bingo!" is pressed while the winner comes up for their prize.
 function defaultWalkup() {
-  return {on: true, url: 'https://www.youtube.com/watch?v=3GwjfUFyY6M', start: '', vol: 70};
+  return {on: true, url: 'https://www.youtube.com/watch?v=3GwjfUFyY6M', start: '', vol: 100};
 }
 function defaultGame() {
   return {
@@ -911,13 +913,14 @@ function manToggle(i, cb) {
 }
 
 // ---------- Walk-up music ----------
+let walkWaiting = false, walkWatchT = null;
 let walkPlayer = null, walkReady = false, walkOn = false, walkFadeT = null, walkStartT = null, walkDuckT = null, walkPreview = false;
 function walkupSong() {
   const w = game.walkup;
   const yt = w && parseYT(w.url || '');
   return yt ? {id: yt.id, start: w.start ? parseTime(w.start) : yt.start} : null;
 }
-const walkVol = () => +game.walkup.vol || 70;
+const walkVol = () => +game.walkup.vol || 100;
 function fadeWalk(to, ms, then) {
   clearInterval(walkFadeT);
   if (!walkPlayer || !walkReady) return;
@@ -937,14 +940,20 @@ function startWalkup(delay = 0, preview = false) {
   walkStartT = setTimeout(() => {
     if (!walkOn) return;
     clearInterval(walkFadeT);
+    walkPlayer.unMute();  // YouTube remembers "muted" per site (the link tester mutes), so always unmute
     walkPlayer.setVolume(0);
+    walkWaiting = true;
     walkPlayer.loadVideoById({videoId: s.id, startSeconds: s.start});
-    fadeWalk(walkVol(), 1500);
+    clearTimeout(walkWatchT);
+    walkWatchT = setTimeout(() => {
+      if (walkOn && walkWaiting) toast('Walk-up music didn\'t start. Check the internet, or try a different link in Setup.', 'bad');
+    }, 8000);
   }, Math.max(0, delay));
   return true;
 }
 function stopWalkup(fast = false) {
-  clearTimeout(walkStartT); clearTimeout(walkDuckT);
+  clearTimeout(walkStartT); clearTimeout(walkDuckT); clearTimeout(walkWatchT);
+  walkWaiting = false;
   if (!walkOn) return;
   walkOn = false; renderWalkbar();
   fadeWalk(0, fast ? 250 : 1800, () => walkPlayer.stopVideo());
@@ -953,8 +962,8 @@ function stopWalkup(fast = false) {
 function duckWalkup() {
   if (!walkOn) return;
   clearTimeout(walkDuckT);
-  fadeWalk(Math.round(walkVol() * 0.3), 150);
-  walkDuckT = setTimeout(() => walkOn && fadeWalk(walkVol(), 900), 2400);
+  if (!walkWaiting) fadeWalk(Math.round(walkVol() * 0.5), 150);
+  walkDuckT = setTimeout(() => walkOn && !walkWaiting && fadeWalk(walkVol(), 900), 2400);
 }
 function renderWalkbar() {
   const bar = $('#walkbar');
@@ -1012,8 +1021,14 @@ window.onYouTubeIframeAPIReady = () => {
     events: {
       onReady: () => { walkReady = true; },
       // Loop the track until the host moves on
-      onStateChange: e => { if (e.data === YT.PlayerState.ENDED && walkOn) { walkPlayer.seekTo(walkupSong()?.start || 0, true); walkPlayer.playVideo(); } },
-      onError: e => { if (walkOn) { walkOn = false; renderWalkbar(); toast(`Walk-up music didn't play: ${YT_ERRORS[e.data] || 'YouTube error ' + e.data}. Change the link in Setup.`, 'bad'); } }
+      onStateChange: e => {
+        if (e.data === YT.PlayerState.PLAYING && walkOn && walkWaiting) {
+          walkWaiting = false; clearTimeout(walkWatchT);
+          walkPlayer.unMute(); fadeWalk(walkVol(), 1200);
+        }
+        if (e.data === YT.PlayerState.PLAYING && !walkOn) walkPlayer.stopVideo();  // stopped while it was loading
+        if (e.data === YT.PlayerState.ENDED && walkOn) { walkPlayer.seekTo(walkupSong()?.start || 0, true); walkPlayer.playVideo(); } },
+      onError: e => { walkWaiting = false; clearTimeout(walkWatchT); if (walkOn) { walkOn = false; renderWalkbar(); toast(`Walk-up music didn't play: ${YT_ERRORS[e.data] || 'YouTube error ' + e.data}. Change the link in Setup.`, 'bad'); } }
     }
   });
   testPlayer = new YT.Player('yttest-inner', {
