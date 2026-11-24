@@ -5,121 +5,157 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Music Bingo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
 <style>
+/* Bingo hall: green baize tables, brass fittings, red bingo balls, marquee lettering. */
 :root{
-  --bg:#14102a; --panel:#1f1a3d; --panel2:#2a2452; --line:#3a3370; --field:#120e26;
-  --text:#f3f0ff; --muted:#a9a3d1;
-  --accent:#ff4fa3; --accent2:#5ee7ff; --good:#3ddc97; --bad:#ff6b6b; --warn:#ffcc4d;
+  --bg:#0c3427; --bg2:#08261c; --panel:#114233; --panel2:#18523f; --line:#2a654f; --field:#0a2e22;
+  --text:#f5efdc; --muted:#a8c3b4;
+  --ball:#e5402c; --ball-dk:#a82616; --brass:#f1b33e; --brass-dk:#b9832a;
+  --accent:var(--ball); --accent2:var(--brass);
+  --good:#8fe3b1; --bad:#ff8069; --warn:var(--brass);
+  --display:Bungee,Impact,sans-serif; --ui:"Bricolage Grotesque",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html{color-scheme:dark}
-body{margin:0;min-height:100vh;color:var(--text);font:15px/1.45 Inter,system-ui,sans-serif;
-  background:radial-gradient(1100px 600px at 5% -10%,#3b1f6b 0,transparent 60%),
-             radial-gradient(900px 500px at 110% 0%,#0f3d5c 0,transparent 55%),var(--bg);background-attachment:fixed}
-h1,h2,h3,.display{font-family:Fredoka,Inter,sans-serif;font-weight:600;margin:0}
-h2{font-size:20px;margin-bottom:12px}
-a{color:var(--accent2)}
-code{background:var(--field);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
+body{margin:0;min-height:100vh;color:var(--text);font:16px/1.5 var(--ui);font-optical-sizing:auto;
+  background:radial-gradient(1200px 700px at 50% -10%,#14533e 0,transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--bg);background-attachment:fixed}
+h1,h2,h3{font-family:var(--ui);font-weight:800;margin:0;letter-spacing:-.01em;line-height:1.15}
+h2{font-size:21px;margin-bottom:12px}
+a{color:var(--brass)}
+code{background:var(--field);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:13.5px;color:var(--brass)}
 [hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
 
-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  padding:12px 24px;border-bottom:1px solid var(--line);background:rgba(20,16,42,.88);backdrop-filter:blur(8px)}
-.logo{font:700 22px Fredoka,sans-serif;letter-spacing:.01em}
-.logo span{color:var(--accent)}
-nav{display:flex;gap:6px}
-.tab{appearance:none;border:1px solid transparent;background:none;color:var(--muted);font:600 15px Inter,sans-serif;padding:8px 14px;border-radius:10px;cursor:pointer}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;
+  padding:12px 28px;border-bottom:3px solid var(--brass-dk);background:rgba(8,38,28,.94);backdrop-filter:blur(8px)}
+.logo{font:400 26px/1 var(--display);color:var(--brass);letter-spacing:.02em;display:flex;align-items:center;gap:10px}
+.logo .ball{width:34px;height:34px;font-size:15px}
+nav{display:flex;gap:4px}
+.tab{appearance:none;border:0;background:none;color:var(--muted);font:600 16px var(--ui);padding:7px 14px 7px 7px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:9px}
+.tab i{font:400 13px/26px var(--display);font-style:normal;width:26px;height:26px;border-radius:50%;text-align:center;background:var(--panel2);color:var(--muted)}
 .tab:hover{color:var(--text)}
-.tab.active{color:var(--text);background:var(--panel2);border-color:var(--line)}
+.tab.active{color:var(--text);background:var(--panel)}
+.tab.active i{background:var(--ball);color:#fff}
 
-main{max-width:1220px;margin:0 auto;padding:24px 16px 80px}
+/* The bingo ball: used for the logo, tabs' active state and the round number. */
+.ball{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex:none;color:#2a1608;font-family:var(--display);
+  background:radial-gradient(circle at 50% 50%,#fff8e6 0 36%,transparent 37%),radial-gradient(circle at 32% 28%,#ff8a70,var(--ball) 45%,var(--ball-dk));
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.25)}
+
+main{max-width:1220px;margin:0 auto;padding:28px 18px 96px}
 .stack{display:flex;flex-direction:column;gap:18px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
 .muted{color:var(--muted)}
-.small{font-size:13px}
+.small{font-size:14px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .spacer{flex:1}
 
-.btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:10px 16px;
-  font:600 15px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .05s,filter .15s}
-.btn:hover{filter:brightness(1.15)}
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:999px;padding:10px 18px;
+  font:600 15px var(--ui);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .06s,filter .15s}
+.btn:hover{filter:brightness(1.12)}
 .btn:active{transform:translateY(1px)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.good{background:var(--good);border-color:var(--good);color:#06261a}
-.btn.ghost{background:none}
-.btn.big{padding:14px 22px;font-size:17px;border-radius:14px}
-.btn.huge{padding:18px 26px;font:700 22px Fredoka,sans-serif;border-radius:16px;width:100%;justify-content:center}
-.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.btn.primary{background:var(--ball);border-color:var(--ball);color:#fff;box-shadow:inset 0 -3px 0 var(--ball-dk)}
+.btn.good{background:var(--brass);border-color:var(--brass);color:#2a1a04;box-shadow:inset 0 -3px 0 var(--brass-dk)}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);border-color:var(--line)}
+.btn.big{padding:13px 22px;font-size:17px}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none;transform:none}
+
+/* The BINGO button: a lit marquee sign. */
+.btn.huge{position:relative;width:100%;justify-content:center;padding:26px 20px 24px;border-radius:18px;border:0;
+  font:400 clamp(30px,4vw,44px)/1 var(--display);letter-spacing:.03em;color:#fff8e6;text-shadow:0 3px 0 var(--ball-dk);
+  background:radial-gradient(120% 140% at 50% 0%,#f2604b,var(--ball) 55%,var(--ball-dk));
+  box-shadow:0 0 0 6px var(--bg2),0 0 0 9px var(--brass-dk),0 14px 30px rgba(0,0,0,.35),inset 0 -6px 0 rgba(0,0,0,.2)}
+.btn.huge::before{content:"";position:absolute;inset:9px;border-radius:11px;pointer-events:none;border:5px dotted #ffe7a8;opacity:.9}
+.btn.huge small{display:block;font:600 14px var(--ui);letter-spacing:0;text-shadow:none;color:#ffd9cf;margin-top:8px}
+.btn.huge span{display:flex;flex-direction:column;align-items:center}
+.btn.huge:hover:not(:disabled)::before{animation:chase .5s steps(1) infinite}
+@keyframes chase{50%{border-color:#fff}}
 
 input,textarea,select{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit}
-input:focus,textarea:focus,select:focus{outline:2px solid var(--accent2);outline-offset:1px}
-textarea{width:100%;min-height:340px;resize:vertical;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace}
-.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-.form label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13px;color:var(--muted)}
-.seg{display:flex;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:3px}
-.seg button{flex:1;appearance:none;border:0;background:none;color:var(--muted);padding:7px 10px;border-radius:8px;font:600 14px Inter,sans-serif;cursor:pointer}
-.seg button.on{background:var(--accent);color:#fff}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--brass);outline-offset:1px}
+input[type=checkbox]{accent-color:var(--brass);width:18px;height:18px}
+textarea{width:100%;min-height:340px;resize:vertical;font:13.5px/1.6 ui-monospace,Menlo,Consolas,monospace}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.form label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
+.wform{grid-template-columns:2fr 1fr 1fr}
+.wform .wcheck{grid-column:1/-1;flex-direction:row;align-items:center;gap:10px;color:var(--text);font-size:15px}
+.seg{display:flex;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{flex:1;appearance:none;border:0;background:none;color:var(--muted);padding:7px 10px;border-radius:999px;font:600 14px var(--ui);cursor:pointer}
+.seg button.on{background:var(--brass);color:#2a1a04}
 
 .rtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.rtab{appearance:none;border:1px solid var(--line);background:var(--field);color:var(--muted);border-radius:999px;padding:7px 14px;font:600 14px Inter,sans-serif;cursor:pointer}
-.rtab.on{background:var(--panel2);color:var(--text);border-color:var(--accent)}
+.rtab{appearance:none;border:1px solid var(--line);background:var(--field);color:var(--muted);border-radius:999px;padding:7px 14px;font:600 14px var(--ui);cursor:pointer}
+.rtab.on{background:var(--panel2);color:var(--text);border-color:var(--brass)}
 .pill{display:inline-block;min-width:22px;padding:0 7px;border-radius:999px;background:var(--panel2);font-size:12px;text-align:center;margin-left:4px}
+.rtab.on .pill{background:var(--brass);color:#2a1a04}
 .notes{display:flex;flex-direction:column;gap:6px;margin:10px 0}
-.note{padding:8px 12px;border-radius:10px;font-size:14px;border:1px solid var(--line);background:var(--field)}
-.note.ok{border-color:rgba(61,220,151,.5)}
-.note.warn{border-color:rgba(255,204,77,.6)}
-.note.bad{border-color:rgba(255,107,107,.7)}
+.note{padding:9px 13px;border-radius:10px;font-size:14px;border:1px solid var(--line);border-left-width:4px;background:var(--field)}
+.note.ok{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--brass)}
+.note.bad{border-left-color:var(--bad)}
 .testlist{max-height:240px;overflow:auto;font-size:13px;margin-top:8px}
 .testlist div{padding:3px 0;border-bottom:1px solid var(--line)}
 
 /* Play view */
-.playhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.playhead h1{font-size:28px}
+.playhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.playhead h1{font:400 30px/1 var(--display);color:var(--text);display:flex;align-items:center;gap:12px}
+.playhead h1 .ball{width:46px;height:46px;font-size:20px}
+.playhead h1 .muted{font:600 17px var(--ui)}
 .stages{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stage{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--panel)}
-.stage .n{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.stage .t{font:600 18px Fredoka,sans-serif}
-.stage .w{font-size:12px;color:var(--good);margin-top:2px;word-break:break-word}
-.stage.now{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,79,163,.22);background:linear-gradient(180deg,rgba(255,79,163,.12),transparent)}
-.stage.done .t{text-decoration:line-through;text-decoration-color:var(--good)}
+.stage{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--panel)}
+.stage .n{font-size:13px;color:var(--muted);font-weight:600}
+.stage .t{font:800 19px var(--ui)}
+.stage .w{font-size:13px;color:var(--brass);margin-top:3px;word-break:break-word;font-weight:600}
+.stage.now{border-color:var(--brass);background:linear-gradient(180deg,rgba(241,179,62,.16),var(--panel) 70%);box-shadow:0 0 0 1px var(--brass)}
+.stage.now .n{color:var(--brass)}
+.stage.done{opacity:.75}
+.stage.done .t{text-decoration:line-through;text-decoration-color:var(--brass);text-decoration-thickness:2px}
 .cols{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
 .nowcard{position:relative}
-.nowlabel{font-size:12px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em}
-.nowtitle{font:600 34px/1.1 Fredoka,sans-serif;margin-top:6px}
-.nowartist{font-size:18px;color:var(--muted);margin-top:2px}
+.nowlabel{font-size:14px;font-weight:700;color:var(--brass)}
+.nowtitle{font:800 38px/1.08 var(--ui);letter-spacing:-.02em;margin-top:4px;text-wrap:balance}
+.nowartist{font-size:19px;color:var(--muted);margin-top:4px}
 .hidetitles .nowtitle,.hidetitles .nowartist,.hidetitles .upnext .t,.hidetitles .playedlist,.hidetitles .ticklist{filter:blur(9px);user-select:none}
-.ytbox{margin-top:14px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
-.ytbox iframe,#yt{width:320px;height:180px;border-radius:12px;background:#000;max-width:100%}
-.bar{height:8px;background:var(--panel2);border-radius:8px;overflow:hidden;margin-top:14px}
+.ytbox{margin-top:16px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.ytbox iframe,#yt{width:320px;height:180px;border-radius:10px;background:#000;max-width:100%;border:3px solid var(--bg2)}
+.bar{height:8px;background:var(--field);border-radius:8px;overflow:hidden;margin-top:16px}
+.bar>i{display:block;height:100%;width:0;background:var(--brass);transition:width .25s linear}
 .bingo-splash{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;pointer-events:none;
-  font-family:Fredoka,Inter,sans-serif;font-weight:700;font-size:clamp(64px,16vw,220px);color:#fff;letter-spacing:.02em;
-  text-shadow:0 0 30px var(--accent),0 0 60px var(--accent),0 6px 0 rgba(0,0,0,.35);background:radial-gradient(circle,rgba(255,79,163,.28),transparent 65%);
+  font:400 clamp(60px,15vw,210px)/1 var(--display);color:#fff8e6;letter-spacing:.02em;
+  text-shadow:0 8px 0 var(--ball-dk),0 0 40px rgba(241,179,62,.7);background:radial-gradient(circle,rgba(229,64,44,.35),transparent 65%);
   animation:bingoPop 1.6s ease-out forwards}
 @keyframes bingoPop{0%{opacity:0;transform:scale(.4) rotate(-6deg)}15%{opacity:1;transform:scale(1.12) rotate(2deg)}
   30%{transform:scale(1) rotate(0)}80%{opacity:1}100%{opacity:0;transform:scale(1.05)}}
-@media (prefers-reduced-motion:reduce){.bingo-splash{animation:bingoFade 1.6s linear forwards}@keyframes bingoFade{0%,80%{opacity:1}100%{opacity:0}}}
-@media print{.bingo-splash{display:none!important}}
-.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .25s linear}
-.upnext{margin-top:14px;padding:12px 14px;border:1px dashed var(--line);border-radius:14px}
-.upnext .t{font:600 20px Fredoka,sans-serif}
-.playedlist{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow:auto;font-size:14px}
-.playedlist div{display:flex;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
-.playedlist b{color:var(--muted);min-width:26px;font-weight:600}
+@media (prefers-reduced-motion:reduce){.bingo-splash{animation:bingoFade 1.6s linear forwards}@keyframes bingoFade{0%,80%{opacity:1}100%{opacity:0}}
+  .btn.huge:hover::before{animation:none}.walkbar .eq i{animation:none}}
+@media print{.bingo-splash,.walkbar{display:none!important}}
+.upnext{margin-top:16px;padding:14px 16px;border:2px dashed var(--line);border-radius:12px}
+.upnext .t{font:800 21px var(--ui)}
+.playedlist{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;font-size:15px}
+.playedlist div{display:flex;gap:12px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.playedlist b{color:var(--brass);min-width:26px;font-weight:700;font-variant-numeric:tabular-nums}
 .ticklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;max-height:340px;overflow:auto;margin-top:10px}
-.ticklist label{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid var(--line);border-radius:10px;font-size:13px;cursor:pointer;background:var(--field)}
-.ticklist label.on{border-color:var(--good);background:rgba(61,220,151,.12)}
-.banner{border-radius:16px;padding:16px 18px;border:1px solid var(--good);background:rgba(61,220,151,.12)}
-.banner h3{font-size:22px;margin-bottom:4px}
+.ticklist label{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid var(--line);border-radius:10px;font-size:14px;cursor:pointer;background:var(--field)}
+.ticklist label.on{border-color:var(--good);background:rgba(143,227,177,.1)}
+.banner{border-radius:14px;padding:18px 20px;border:2px solid var(--brass);background:linear-gradient(180deg,rgba(241,179,62,.16),rgba(241,179,62,.05))}
+.banner h3{font-size:23px;margin-bottom:4px}
 
-.codein{font:700 30px/1 Fredoka,sans-serif;letter-spacing:.14em;text-transform:uppercase;width:100%;text-align:center;padding:14px}
-.cgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:12px}
-.cell{background:var(--field);border:1px solid var(--line);border-radius:9px;padding:6px 4px;font-size:11.5px;line-height:1.25;min-height:58px;
-  display:flex;flex-direction:column;justify-content:center;text-align:center;word-break:break-word}
-.cell small{color:var(--muted);font-size:10.5px;margin-top:2px}
-.cell.hit{background:rgba(61,220,151,.2);border-color:var(--good)}
-.cell.rowfull{box-shadow:inset 0 0 0 2px var(--good)}
-.cell.last{outline:2px solid var(--warn);outline-offset:-1px}
-.verdict{font:600 24px/1.2 Fredoka,sans-serif;margin-top:14px}
+.codein{font:400 34px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;width:100%;text-align:center;padding:14px;color:var(--brass)}
+.codein::placeholder{color:var(--line)}
+.cgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:14px;padding:6px;background:var(--bg2);border-radius:10px}
+.cell{background:#fbf4e1;color:#1d2a22;border-radius:6px;padding:6px 4px;font-size:11.5px;line-height:1.25;min-height:60px;font-weight:600;
+  display:flex;flex-direction:column;justify-content:center;text-align:center;word-break:break-word;position:relative}
+.cell small{color:#5b6b61;font-size:10.5px;margin-top:2px;font-weight:400}
+.cell.hit{background:radial-gradient(circle,rgba(229,64,44,.85) 0 42%,rgba(229,64,44,.6) 44%,transparent 66%),#fbf4e1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.cell.hit small{color:#ffe7df}
+.cell.rowfull{box-shadow:inset 0 0 0 3px var(--brass)}
+.cell.last{outline:3px solid var(--brass);outline-offset:-1px}
+.verdict{font:800 25px/1.2 var(--ui);margin-top:14px}
 .verdict.ok{color:var(--good)}
 .verdict.no{color:var(--bad)}
 
@@ -129,31 +165,40 @@ textarea{width:100%;min-height:340px;resize:vertical;font:13px/1.55 ui-monospace
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.bad{border-color:var(--bad)}
 
+/* Walk-up music bar: shows while the prize music is playing */
+.walkbar{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;
+  background:var(--bg2);border:2px solid var(--brass);border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,.45);max-width:calc(100vw - 40px)}
+.walkbar b{font-weight:700}
+.walkbar .eq{display:flex;align-items:flex-end;gap:3px;height:18px}
+.walkbar .eq i{width:4px;background:var(--brass);border-radius:2px;animation:eq .9s ease-in-out infinite}
+.walkbar .eq i:nth-child(2){animation-delay:-.3s}.walkbar .eq i:nth-child(3){animation-delay:-.6s}
+@keyframes eq{0%,100%{height:5px}50%{height:18px}}
+
 /* On-screen card preview (cards tab) */
-.preview{background:#fff;color:#111;border-radius:14px;padding:18px;max-width:780px;overflow-x:auto}
+.preview{background:#fff;color:#111;border-radius:12px;padding:18px;max-width:780px;overflow-x:auto;box-shadow:0 0 0 6px var(--bg2)}
 .preview .sheet{height:auto;min-width:560px}
 .preview .rcard{min-height:150px}
 
 /* Print sheets: one A4 page per player, a card for each round */
-#yttest{position:fixed;left:-10000px;top:0;width:200px;height:200px}
+#yttest,#walkup-host{position:fixed;left:-10000px;top:0;width:200px;height:200px}
 #print-area{display:none}
 /* 236mm tall leaves room for Safari's own margins and header/footer on A4 or Letter. */
-.sheet{height:236mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;gap:3.5mm;font-family:Inter,sans-serif;color:#111;background:#fff;
+.sheet{height:236mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;gap:3.5mm;font-family:var(--ui);color:#111;background:#fff;
   -webkit-print-color-adjust:exact;print-color-adjust:exact}
 .phead{display:flex;justify-content:space-between;align-items:center;gap:4mm;border-bottom:2.5px solid #111;padding-bottom:2.5mm}
-.pev{font:700 18pt Fredoka,sans-serif;line-height:1.1}
-.pround{font:500 9pt Inter,sans-serif;color:#444;margin-top:1mm}
+.pev{font:400 17pt var(--display);line-height:1.1}
+.pround{font:500 9pt var(--ui);color:#444;margin-top:1mm}
 .pcodebox{text-align:center}
-.pcodebox small{display:block;font:600 7.5pt Inter,sans-serif;text-transform:uppercase;letter-spacing:.1em;color:#444}
-.pcode{font:700 22pt Fredoka,sans-serif;letter-spacing:.12em;border:2.5px solid #111;border-radius:3mm;padding:0 4mm;white-space:nowrap}
+.pcodebox small{display:block;font:600 8pt var(--ui);color:#444}
+.pcode{font:400 21pt var(--display);letter-spacing:.12em;border:2.5px solid #111;border-radius:3mm;padding:0 4mm;white-space:nowrap}
 .rcard{flex:1;display:flex;gap:2.5mm;min-height:0}
 .rlabel{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;
-  background:#111;color:#fff;border-radius:2mm;padding:0 1.5mm;font:700 12pt Fredoka,sans-serif;letter-spacing:.06em}
+  background:#111;color:#fff;border-radius:2mm;padding:0 1.5mm;font:400 11pt var(--display);letter-spacing:.06em}
 .pgrid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);border:2px solid #111}
 .pcell{border:1px solid #111;padding:1mm 1.2mm;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
-  font:600 8.5pt/1.15 Inter,sans-serif;word-break:break-word;overflow:hidden}
+  font:600 8.5pt/1.15 var(--ui);word-break:break-word;overflow:hidden}
 .pcell small{font-weight:400;font-size:7pt;color:#444;margin-top:.6mm}
-.pfoot{font:8pt Inter,sans-serif;color:#333;display:flex;justify-content:space-between;gap:4mm}
+.pfoot{font:8pt var(--ui);color:#333;display:flex;justify-content:space-between;gap:4mm}
 @media print{
   @page{size:A4 portrait;margin:10mm}
   html{color-scheme:light;background:#fff!important}
@@ -164,22 +209,24 @@ textarea{width:100%;min-height:340px;resize:vertical;font:13px/1.55 ui-monospace
   .sheet:last-child{break-after:auto;page-break-after:auto}
 }
 
-@media (max-width:900px){.cols{grid-template-columns:1fr}}
+@media (max-width:900px){.cols,.wform{grid-template-columns:1fr}}
 @media (max-width:640px){
   header{padding:10px 16px}
+  .tab{font-size:14px;padding-right:10px}
   .stages{grid-template-columns:repeat(2,1fr)}
-  .nowtitle{font-size:26px}
+  .nowtitle{font-size:28px}
   .cell{font-size:10px;min-height:50px}
+  .walkbar{left:12px;right:12px;bottom:12px}
 }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">🎵 Music <span>Bingo</span></div>
+  <div class="logo"><span class="ball" aria-hidden="true">♪</span>Music Bingo</div>
   <nav>
-    <button class="tab" data-view="setup">1 · Setup</button>
-    <button class="tab" data-view="cards">2 · Print cards</button>
-    <button class="tab" data-view="play">3 · Play</button>
+    <button class="tab" data-view="setup"><i>1</i>Setup</button>
+    <button class="tab" data-view="cards"><i>2</i>Print cards</button>
+    <button class="tab" data-view="play"><i>3</i>Play</button>
   </nav>
 </header>
 
@@ -204,7 +251,7 @@ textarea{width:100%;min-height:340px;resize:vertical;font:13px/1.55 ui-monospace
         <div class="panel"><div class="row"><h2 style="margin:0">Songs played</h2><span class="spacer"></span><button class="btn ghost small" id="undo-btn">↩ Undo last</button></div><div id="played" class="playedlist" style="margin-top:10px"></div></div>
       </div>
       <div class="stack">
-        <button class="btn primary huge" id="bingo-btn">🎤 BINGO called!</button>
+        <button class="btn primary huge" id="bingo-btn"><span>Bingo!<small>Someone shouted? Press here</small></span></button>
         <div class="panel">
           <h2>Check a card</h2>
           <p class="muted small" style="margin:0 0 10px">Type the code printed on the player's sheet.</p>
@@ -220,6 +267,8 @@ textarea{width:100%;min-height:340px;resize:vertical;font:13px/1.55 ui-monospace
 </main>
 
 <div id="yttest"><div id="yttest-inner"></div></div>
+<div id="walkup-host" aria-hidden="true"><div id="walkup-yt"></div></div>
+<div id="walkbar" class="walkbar" role="status" hidden></div>
 <div id="print-area"></div>
 <div id="toast" class="toast" role="status"></div>
 
@@ -297,9 +346,13 @@ function mulberry32(a) {
 function freshRoundProgress() {
   return {played: [], skipped: [], current: null, next: null, stage: 0, winners: [], pending: false, done: false};
 }
+// Walk-up music: plays after "Bingo!" is pressed while the winner comes up for their prize.
+function defaultWalkup() {
+  return {on: true, url: 'https://www.youtube.com/watch?v=3GwjfUFyY6M', start: '', vol: 70};
+}
 function defaultGame() {
   return {
-    v: 1, name: 'Music Bingo', mode: 'youtube', clip: 30, cardsPerRound: 30, codes: [],
+    v: 1, name: 'Music Bingo', mode: 'youtube', clip: 30, cardsPerRound: 30, codes: [], walkup: defaultWalkup(),
     rounds: [0, 1, 2, 3].map(() => ({text: '', printedHash: null})),
     prog: {round: 0, finished: false, rounds: [0, 1, 2, 3].map(freshRoundProgress)}
   };
@@ -307,7 +360,7 @@ function defaultGame() {
 function load() {
   try {
     const g = JSON.parse(localStorage.getItem(STORE));
-    if (g && g.v === 1) { if (!Array.isArray(g.codes)) g.codes = []; return g; }
+    if (g && g.v === 1) { if (!Array.isArray(g.codes)) g.codes = []; if (!g.walkup) g.walkup = defaultWalkup(); return g; }
   } catch (e) {}
   return defaultGame();
 }
@@ -437,7 +490,7 @@ function renderSetup() {
         <label>Players (one sheet each)<input id="s-cards" type="number" min="1" max="500" value="${g.cardsPerRound}"></label>
       </div>
       <p class="muted small" style="margin:12px 0 0">${g.mode === 'youtube'
-        ? 'YouTube mode: the app plays a random song, cuts it after the clip length and moves on by itself until you press Pause or "BINGO called!".'
+        ? 'YouTube mode: the app plays a random song, cuts it after the clip length and moves on by itself until you press Pause or "Bingo!".'
         : 'Manual mode: the app tells you which song to play next on the jukebox, and you press a button as each one plays. You can also tick songs off a list in any order.'}</p>
     </div>
 
@@ -454,6 +507,21 @@ function renderSetup() {
         <button class="btn primary" id="s-next">Next: print cards →</button>
       </div>
       <div id="s-testout"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Walk-up music</h2>
+      <p class="muted small" style="margin:0 0 14px">Plays in the background after you press <b>Bingo!</b>, while the winner comes up to collect their prize. It fades out when you carry on playing, or you can stop it from the bar in the corner.</p>
+      <div class="form wform">
+        <label class="wcheck"><input type="checkbox" id="w-on" ${g.walkup.on ? 'checked' : ''}> Play walk-up music</label>
+        <label>YouTube link<input id="w-url" value="${esc(g.walkup.url)}" placeholder="https://www.youtube.com/watch?v=..."></label>
+        <label>Start at (optional)<input id="w-start" value="${esc(g.walkup.start)}" placeholder="e.g. 0:12"></label>
+        <label>Volume
+          <select id="w-vol">${[40, 55, 70, 85, 100].map(v => `<option value="${v}" ${+g.walkup.vol === v ? 'selected' : ''}>${v}%</option>`).join('')}</select>
+        </label>
+      </div>
+      <div id="w-note" class="notes"></div>
+      <div class="row"><button class="btn" id="w-test">▶ Preview walk-up music</button></div>
     </div>
 
     <div class="panel">
@@ -480,6 +548,19 @@ function renderSetup() {
     ta.value = EXAMPLE; game.rounds[setupRound].text = EXAMPLE; save(); updateSetupStatus();
   };
   $('#s-test').onclick = () => testLinks(setupRound);
+  const wNote = () => {
+    const w = game.walkup;
+    $('#w-note').innerHTML = w.on && !parseYT(w.url || '') ? '<div class="note bad">That doesn\'t look like a YouTube link, so no walk-up music will play.</div>' : '';
+  };
+  $('#w-on').onchange = e => { game.walkup.on = e.target.checked; save(); wNote(); };
+  $('#w-url').oninput = e => { game.walkup.url = e.target.value.trim(); save(); wNote(); };
+  $('#w-start').oninput = e => { game.walkup.start = e.target.value.trim(); save(); };
+  $('#w-vol').onchange = e => { game.walkup.vol = +e.target.value; save(); if (walkOn) fadeWalk(game.walkup.vol, 300); };
+  $('#w-test').onclick = () => {
+    if (walkOn) return stopWalkup();
+    if (!startWalkup(0, true)) toast(walkReady ? 'Add a working YouTube link first.' : 'The YouTube player is still loading. Try again in a moment.', 'bad');
+  };
+  wNote();
   $('#s-next').onclick = () => setView('cards');
   $('#b-export').onclick = exportGame;
   $('#b-import').onchange = importGame;
@@ -489,7 +570,7 @@ function renderSetup() {
   };
   $('#b-reset-all').onclick = () => {
     if (!confirm('Delete ALL songs, card codes and progress? This can\'t be undone (unless you saved a backup).')) return;
-    stopYT(); game = defaultGame(); lastCheck = null; save(); renderSetup();
+    stopYT(); stopWalkup(true); game = defaultGame(); lastCheck = null; save(); renderSetup();
   };
   updateSetupStatus();
 }
@@ -533,7 +614,8 @@ function importGame(e) {
       const g = JSON.parse(fr.result);
       if (!g || g.v !== 1 || !Array.isArray(g.rounds)) throw new Error();
       if (!Array.isArray(g.codes)) g.codes = [];
-      stopYT(); game = g; lastCheck = null; save(); renderSetup(); toast('Backup loaded.');
+      if (!g.walkup) g.walkup = defaultWalkup();
+      stopYT(); stopWalkup(true); game = g; lastCheck = null; save(); renderSetup(); toast('Backup loaded.');
     } catch (err) { toast('That file isn\'t a Music Bingo backup.', 'bad'); }
   };
   fr.readAsText(f);
@@ -620,7 +702,7 @@ function renderPlay() {
 
   $('#play-head').innerHTML = `
     <div class="playhead">
-      <h1>Round ${r + 1} <span class="muted" style="font-size:18px">of 4</span></h1>
+      <h1><span class="ball" aria-hidden="true">${r + 1}</span>Round ${r + 1} <span class="muted">of 4</span></h1>
       <span class="pill" style="font-size:13px;padding:3px 10px">${yt ? '▶ YouTube' : '✋ Manual'}</span>
       <span class="spacer"></span>
       <label class="row small muted" style="gap:6px;cursor:pointer"><input type="checkbox" id="hide-t" ${hideTitles ? 'checked' : ''}> Hide song names (if players can see this screen)</label>
@@ -634,7 +716,7 @@ function renderPlay() {
   $('#play-stages').innerHTML = STAGES.map((s, i) => {
     const w = R.winners.filter(x => x.stage === i).map(x => x.code);
     const cls = i < R.stage || (i === R.stage && R.pending) ? 'done' : (i === R.stage && !R.done ? 'now' : '');
-    return `<div class="stage ${cls}"><div class="n">Win ${i + 1}${i === R.stage && !R.done ? ' · now playing for' : ''}</div><div class="t">${s.name}</div><div class="muted small">${s.desc}</div>${w.length ? `<div class="w">🏆 ${w.join(', ')}</div>` : ''}</div>`;
+    return `<div class="stage ${cls}"><div class="n">Win ${i + 1}${i === R.stage && !R.done ? ', playing for now' : ''}</div><div class="t">${s.name}</div><div class="muted small">${s.desc}</div>${w.length ? `<div class="w">🏆 ${w.join(', ')}</div>` : ''}</div>`;
   }).join('');
 
   // Banner: confirmed winner / round done / game over
@@ -658,14 +740,14 @@ function renderPlay() {
   const cur = R.current != null ? songs[R.current] : null;
   $('#now-info').innerHTML = !playable
     ? `<div class="nowlabel">Not ready</div><div class="nowtitle" style="font-size:24px">Round ${r + 1} needs at least 15 songs.</div><p><button class="btn" onclick="setupRound=${r};setView('setup')">Go to Setup</button></p>`
-    : `<div class="nowlabel">${cur ? 'Now playing · song ' + R.played.length + ' of ' + songs.length : 'Ready'}</div>
+    : `<div class="nowlabel">${cur ? 'Now playing: song ' + R.played.length + ' of ' + songs.length : 'Ready'}</div>
        <div class="nowtitle">${cur ? esc(cur.title) : (yt ? 'Press Play to start' : 'Press "Play this one" to start')}</div>
        <div class="nowartist">${cur ? esc(cur.artist) : esc(STAGES[R.stage].desc + ' wins first')}</div>`;
 
   $('#yt-wrap').hidden = !yt || !playable;
   $('#clip-wrap').hidden = !yt || !playable;
   $('#yt-side').innerHTML = !ytReady ? 'Loading the YouTube player…'
-    : `Songs keep playing one after another until you press Pause or <b>BINGO called!</b>.<br>${game.clip ? `Each song plays for ${game.clip} seconds.` : 'Each song plays to the end.'}`;
+    : `Songs keep playing one after another until you press Pause or <b>Bingo!</b>.<br>${game.clip ? `Each song plays for ${game.clip} seconds.` : 'Each song plays to the end.'}`;
 
   // Controls
   const c = $('#controls');
@@ -684,7 +766,7 @@ function renderPlay() {
     if (R.next == null || R.played.includes(R.next) || R.skipped.includes(R.next)) { R.next = pickNext(R, songs.length); save(); }
     const nx = R.next != null ? songs[R.next] : null;
     $('#upnext').innerHTML = nx
-      ? `<div class="upnext"><div class="nowlabel" style="color:var(--warn)">Up next: play this on the jukebox</div>
+      ? `<div class="upnext"><div class="nowlabel" >Up next: play this on the jukebox</div>
          <div class="t" style="margin:4px 0 10px">${songText(nx)}</div>
          <div class="row"><button class="btn primary big" id="m-play">▶ Play this one</button><button class="btn" id="m-reroll">🔀 Pick a different song</button></div></div>`
       : `<div class="upnext muted">All songs in this round have been played.</div>`;
@@ -713,12 +795,13 @@ function renderPlay() {
 
 function switchRound(r) {
   if (r < 0 || r > 3) return;
-  stopYT();
+  stopYT(); stopWalkup(true);
   P().round = r; P().finished = false; lastCheck = null; save();
   renderPlay(); renderCheckResult();
 }
 function continueGame() {
   const R = curR();
+  stopWalkup();
   lastCheck = null; $('#check-input').value = '';
   if (R.done) {
     stopYT();
@@ -793,6 +876,7 @@ function shoutBingo() {
 $('#bingo-btn').onclick = () => {
   if (game.mode === 'youtube') ytPause();
   shoutBingo();
+  startWalkup(bingoSnd.state === 'ready' ? Math.round(bingoSnd.buf.duration * 1000) - 300 : 1600);
   $('#check-input').focus();
   $('#check-input').select();
 };
@@ -800,6 +884,7 @@ $('#bingo-btn').onclick = () => {
 // Manual mode
 function manPlayNext() {
   const R = curR();
+  stopWalkup();
   if (R.next == null) return;
   R.played.push(R.next); R.current = R.next;
   R.next = pickNext(R, curSongs().length);
@@ -818,11 +903,69 @@ function manToggle(i, cb) {
     R.played = R.played.filter(x => x !== i);
     R.current = R.played.length ? R.played[R.played.length - 1] : null;
   } else {
+    stopWalkup();
     R.played.push(i); R.current = i;
     if (R.next === i) R.next = pickNext(R, curSongs().length);
   }
   save(); renderPlay();
 }
+
+// ---------- Walk-up music ----------
+let walkPlayer = null, walkReady = false, walkOn = false, walkFadeT = null, walkStartT = null, walkDuckT = null, walkPreview = false;
+function walkupSong() {
+  const w = game.walkup;
+  const yt = w && parseYT(w.url || '');
+  return yt ? {id: yt.id, start: w.start ? parseTime(w.start) : yt.start} : null;
+}
+const walkVol = () => +game.walkup.vol || 70;
+function fadeWalk(to, ms, then) {
+  clearInterval(walkFadeT);
+  if (!walkPlayer || !walkReady) return;
+  const from = walkPlayer.getVolume(), t0 = performance.now();
+  walkFadeT = setInterval(() => {
+    const k = Math.min(1, (performance.now() - t0) / ms);
+    walkPlayer.setVolume(Math.round(from + (to - from) * k));
+    if (k >= 1) { clearInterval(walkFadeT); if (then) then(); }
+  }, 40);
+}
+// Starts the music after `delay` ms (so it comes in after the "Bingo!" shout). Returns false if it can't play.
+function startWalkup(delay = 0, preview = false) {
+  const s = walkupSong();
+  if (!walkReady || !s || (!game.walkup.on && !preview)) return false;
+  clearTimeout(walkStartT); clearTimeout(walkDuckT);
+  walkOn = true; walkPreview = preview; renderWalkbar();
+  walkStartT = setTimeout(() => {
+    if (!walkOn) return;
+    clearInterval(walkFadeT);
+    walkPlayer.setVolume(0);
+    walkPlayer.loadVideoById({videoId: s.id, startSeconds: s.start});
+    fadeWalk(walkVol(), 1500);
+  }, Math.max(0, delay));
+  return true;
+}
+function stopWalkup(fast = false) {
+  clearTimeout(walkStartT); clearTimeout(walkDuckT);
+  if (!walkOn) return;
+  walkOn = false; renderWalkbar();
+  fadeWalk(0, fast ? 250 : 1800, () => walkPlayer.stopVideo());
+}
+// Turn the music down while a sound effect plays, then bring it back.
+function duckWalkup() {
+  if (!walkOn) return;
+  clearTimeout(walkDuckT);
+  fadeWalk(Math.round(walkVol() * 0.3), 150);
+  walkDuckT = setTimeout(() => walkOn && fadeWalk(walkVol(), 900), 2400);
+}
+function renderWalkbar() {
+  const bar = $('#walkbar');
+  bar.hidden = !walkOn;
+  if (walkOn) bar.innerHTML = `<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span><b>${walkPreview ? 'Previewing walk-up music' : 'Walk-up music'}</b> <span class="muted small">plays until you carry on</span></span>
+    <button class="btn" id="walk-stop">Stop music</button>`;
+  if ($('#walk-stop')) $('#walk-stop').onclick = () => stopWalkup();
+  if ($('#w-test')) $('#w-test').textContent = walkOn ? '■ Stop preview' : '▶ Preview walk-up music';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && walkOn) stopWalkup(); });
 
 // ---------- YouTube ----------
 let player = null, ytReady = false, ytPlaying = false, loadedIdx = null, testPlayer = null, testCb = null;
@@ -864,6 +1007,15 @@ window.onYouTubeIframeAPIReady = () => {
       onError: e => onYTError(e.data)
     }
   });
+  walkPlayer = new YT.Player('walkup-yt', {
+    width: 200, height: 200, playerVars: {playsinline: 1, rel: 0},
+    events: {
+      onReady: () => { walkReady = true; },
+      // Loop the track until the host moves on
+      onStateChange: e => { if (e.data === YT.PlayerState.ENDED && walkOn) { walkPlayer.seekTo(walkupSong()?.start || 0, true); walkPlayer.playVideo(); } },
+      onError: e => { if (walkOn) { walkOn = false; renderWalkbar(); toast(`Walk-up music didn't play: ${YT_ERRORS[e.data] || 'YouTube error ' + e.data}. Change the link in Setup.`, 'bad'); } }
+    }
+  });
   testPlayer = new YT.Player('yttest-inner', {
     width: 200, height: 200, playerVars: {mute: 1, playsinline: 1},
     events: {
@@ -882,6 +1034,7 @@ window.onYouTubeIframeAPIReady = () => {
 function ytNext() {
   const R = curR(), songs = curSongs();
   if (!ytReady || R.pending || R.done) return;
+  stopWalkup(true);
   let i = pickNext(R, songs.length);
   while (i != null && !songs[i].id) { R.skipped.push(i); i = pickNext(R, songs.length); }
   if (i == null) { stopYT(); save(); renderPlay(); toast('Every song in this round has been played.'); return; }
@@ -893,6 +1046,7 @@ function ytNext() {
 function ytPlay() {
   const R = curR();
   if (!ytReady || R.pending || R.done) return;
+  stopWalkup(true);
   if (R.current == null) return ytNext();
   ytPlaying = true;
   if (loadedIdx !== R.current) {
@@ -1005,7 +1159,7 @@ $('#check-form').onsubmit = e => {
       already: R.winners.some(w => w.code === pc.code && w.stage === stage)
     };
   }
-  if (lastCheck && !lastCheck.error) playSound(lastCheck.ok ? winSnd : noBingoSnd);
+  if (lastCheck && !lastCheck.error) { duckWalkup(); playSound(lastCheck.ok ? winSnd : noBingoSnd); }
   renderCheckResult();
 };
 function renderCheckResult() {
@@ -1017,7 +1171,7 @@ function renderCheckResult() {
   const canConfirm = c.ok && !c.already && c.stage === (R.done ? 3 : R.stage);
   box.innerHTML = `
     <div class="cgrid">${c.card.map((i, k) => `<div class="cell ${c.marks[k] ? 'hit' : ''} ${c.rows[Math.floor(k / 5)] === 5 ? 'rowfull' : ''} ${i === c.current ? 'last' : ''}">${esc(songs[i].title)}${songs[i].artist ? `<small>${esc(songs[i].artist)}</small>` : ''}</div>`).join('')}</div>
-    <div class="small muted" style="margin-top:6px">Round ${curRoundIdx() + 1} card for ${c.code} · green = played${c.current != null && c.card.includes(c.current) ? ' · yellow outline = the song playing now' : ''}</div>
+    <div class="small muted" style="margin-top:6px">Round ${curRoundIdx() + 1} card for ${c.code} · red dot = played${c.current != null && c.card.includes(c.current) ? ' · gold outline = the song playing now' : ''}</div>
     <div class="verdict ${c.ok ? 'ok' : 'no'}">${esc(c.msg)}</div>
     ${!c.issued ? '<div class="note warn" style="margin-top:8px">Heads up: this code isn\'t one from your latest print. It could be an old printout.</div>' : ''}
     ${c.already ? '<div class="note ok" style="margin-top:8px">Already confirmed as a winner for this.</div>' : ''}
