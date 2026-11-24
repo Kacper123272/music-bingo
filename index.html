@@ -557,7 +557,7 @@ function renderSetup() {
   $('#w-on').onchange = e => { game.walkup.on = e.target.checked; save(); wNote(); };
   $('#w-url').oninput = e => { game.walkup.url = e.target.value.trim(); save(); wNote(); };
   $('#w-start').oninput = e => { game.walkup.start = e.target.value.trim(); save(); };
-  $('#w-vol').onchange = e => { game.walkup.vol = +e.target.value; save(); if (walkOn) fadeWalk(game.walkup.vol, 300); };
+  $('#w-vol').onchange = e => { game.walkup.vol = +e.target.value; save(); };
   $('#w-test').onclick = () => {
     if (walkOn) return stopWalkup();
     if (!startWalkup(0, true)) toast(walkReady ? 'Add a working YouTube link first.' : 'The YouTube player is still loading. Try again in a moment.', 'bad');
@@ -913,57 +913,76 @@ function manToggle(i, cb) {
 }
 
 // ---------- Walk-up music ----------
-let walkWaiting = false, walkWatchT = null;
-let walkPlayer = null, walkReady = false, walkOn = false, walkFadeT = null, walkStartT = null, walkDuckT = null, walkPreview = false;
+// One loop (10 times a second) drives the walk-up player's volume. It doesn't rely on YouTube's
+// "now playing" event (which doesn't always arrive from the hidden player): it checks the player
+// itself and keeps re-applying the volume, so a dropped call or a stored "muted" setting can't leave it silent.
+let walkPlayer = null, walkReady = false, walkOn = false, walkPreview = false;
+let walkStartT = null, walkDuckT = null, walkWatchT = null, walkLoopT = null;
+let walkPhase = 'off';   // off | waiting (loading the song) | on | ducked | stopping
+let walkCur = 0, walkStartedAt = 0;
 function walkupSong() {
   const w = game.walkup;
   const yt = w && parseYT(w.url || '');
   return yt ? {id: yt.id, start: w.start ? parseTime(w.start) : yt.start} : null;
 }
 const walkVol = () => +game.walkup.vol || 100;
-function fadeWalk(to, ms, then) {
-  clearInterval(walkFadeT);
-  if (!walkPlayer || !walkReady) return;
-  const from = walkPlayer.getVolume(), t0 = performance.now();
-  walkFadeT = setInterval(() => {
-    const k = Math.min(1, (performance.now() - t0) / ms);
-    walkPlayer.setVolume(Math.round(from + (to - from) * k));
-    if (k >= 1) { clearInterval(walkFadeT); if (then) then(); }
-  }, 40);
+function walkTarget() {
+  return walkPhase === 'on' ? walkVol() : walkPhase === 'ducked' ? Math.round(walkVol() * 0.5) : 0;
 }
+function walkTick() {
+  if (!walkPlayer || !walkReady) return;
+  let state = -1;
+  try { state = walkPlayer.getPlayerState(); } catch (e) {}
+  if (walkPhase === 'waiting' && state === 1 && walkPlayer.getCurrentTime() > 0) {
+    walkPhase = 'on'; clearTimeout(walkWatchT);
+  }
+  if (walkPhase === 'on' && state === 0) { const s = walkupSong(); walkPlayer.seekTo(s ? s.start : 0, true); walkPlayer.playVideo(); } // loop
+  const target = walkTarget();
+  // Fade in over ~1.2s, duck/restore over ~0.5s, fade out over ~1.5s
+  const step = walkPhase === 'stopping' ? walkVol() / 15 : walkPhase === 'on' && walkCur < target ? walkVol() / 12 : walkVol() / 5;
+  walkCur = walkCur < target ? Math.min(target, walkCur + step) : Math.max(target, walkCur - step);
+  try {
+    if (target > 0 && walkPlayer.isMuted()) walkPlayer.unMute();
+    walkPlayer.setVolume(Math.round(walkCur));
+  } catch (e) {}
+  if (walkPhase === 'stopping' && walkCur <= 0) {
+    walkPhase = 'off';
+    try { walkPlayer.stopVideo(); } catch (e) {}
+    clearInterval(walkLoopT); walkLoopT = null;
+  }
+}
+function walkLoop() { if (!walkLoopT) walkLoopT = setInterval(walkTick, 100); }
 // Starts the music after `delay` ms (so it comes in after the "Bingo!" shout). Returns false if it can't play.
 function startWalkup(delay = 0, preview = false) {
   const s = walkupSong();
   if (!walkReady || !s || (!game.walkup.on && !preview)) return false;
-  clearTimeout(walkStartT); clearTimeout(walkDuckT);
+  clearTimeout(walkStartT); clearTimeout(walkDuckT); clearTimeout(walkWatchT);
   walkOn = true; walkPreview = preview; renderWalkbar();
   walkStartT = setTimeout(() => {
     if (!walkOn) return;
-    clearInterval(walkFadeT);
-    walkPlayer.unMute();  // YouTube remembers "muted" per site (the link tester mutes), so always unmute
-    walkPlayer.setVolume(0);
-    walkWaiting = true;
+    walkPhase = 'waiting'; walkCur = 0;
+    try { walkPlayer.unMute(); walkPlayer.setVolume(0); } catch (e) {}
     walkPlayer.loadVideoById({videoId: s.id, startSeconds: s.start});
-    clearTimeout(walkWatchT);
+    walkLoop();
     walkWatchT = setTimeout(() => {
-      if (walkOn && walkWaiting) toast('Walk-up music didn\'t start. Check the internet, or try a different link in Setup.', 'bad');
+      if (walkOn && walkPhase === 'waiting') toast('Walk-up music didn\'t start. Check the internet, or try a different link in Setup.', 'bad');
     }, 8000);
   }, Math.max(0, delay));
   return true;
 }
 function stopWalkup(fast = false) {
   clearTimeout(walkStartT); clearTimeout(walkDuckT); clearTimeout(walkWatchT);
-  walkWaiting = false;
   if (!walkOn) return;
   walkOn = false; renderWalkbar();
-  fadeWalk(0, fast ? 250 : 1800, () => walkPlayer.stopVideo());
+  if (fast || walkPhase === 'waiting') walkCur = 0;
+  walkPhase = 'stopping'; walkLoop();
 }
 // Turn the music down while a sound effect plays, then bring it back.
 function duckWalkup() {
-  if (!walkOn) return;
+  if (!walkOn || walkPhase === 'waiting') return;
   clearTimeout(walkDuckT);
-  if (!walkWaiting) fadeWalk(Math.round(walkVol() * 0.5), 150);
-  walkDuckT = setTimeout(() => walkOn && !walkWaiting && fadeWalk(walkVol(), 900), 2400);
+  walkPhase = 'ducked';
+  walkDuckT = setTimeout(() => { if (walkOn && walkPhase === 'ducked') walkPhase = 'on'; }, 2400);
 }
 function renderWalkbar() {
   const bar = $('#walkbar');
@@ -1020,15 +1039,11 @@ window.onYouTubeIframeAPIReady = () => {
     width: 200, height: 200, playerVars: {playsinline: 1, rel: 0},
     events: {
       onReady: () => { walkReady = true; },
-      // Loop the track until the host moves on
-      onStateChange: e => {
-        if (e.data === YT.PlayerState.PLAYING && walkOn && walkWaiting) {
-          walkWaiting = false; clearTimeout(walkWatchT);
-          walkPlayer.unMute(); fadeWalk(walkVol(), 1200);
-        }
-        if (e.data === YT.PlayerState.PLAYING && !walkOn) walkPlayer.stopVideo();  // stopped while it was loading
-        if (e.data === YT.PlayerState.ENDED && walkOn) { walkPlayer.seekTo(walkupSong()?.start || 0, true); walkPlayer.playVideo(); } },
-      onError: e => { walkWaiting = false; clearTimeout(walkWatchT); if (walkOn) { walkOn = false; renderWalkbar(); toast(`Walk-up music didn't play: ${YT_ERRORS[e.data] || 'YouTube error ' + e.data}. Change the link in Setup.`, 'bad'); } }
+      onError: e => {
+        if (!walkOn) return;
+        clearTimeout(walkWatchT); walkOn = false; walkPhase = 'off'; renderWalkbar();
+        toast(`Walk-up music didn't play: ${YT_ERRORS[e.data] || 'YouTube error ' + e.data}. Change the link in Setup.`, 'bad');
+      }
     }
   });
   testPlayer = new YT.Player('yttest-inner', {
