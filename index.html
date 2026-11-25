@@ -913,13 +913,14 @@ function manToggle(i, cb) {
 }
 
 // ---------- Walk-up music ----------
-// One loop (10 times a second) drives the walk-up player's volume. It doesn't rely on YouTube's
-// "now playing" event (which doesn't always arrive from the hidden player): it checks the player
-// itself and keeps re-applying the volume, so a dropped call or a stored "muted" setting can't leave it silent.
+// One loop (10 times a second) drives the walk-up player's volume. The hidden player doesn't reliably
+// report its state back to the page (no "playing" event, getPlayerState() stays stale), so nothing here
+// waits on it: the loop just keeps re-applying the volume and unmuting, which takes effect as soon as
+// the song is actually playing.
 let walkPlayer = null, walkReady = false, walkOn = false, walkPreview = false;
 let walkStartT = null, walkDuckT = null, walkWatchT = null, walkLoopT = null;
-let walkPhase = 'off';   // off | waiting (loading the song) | on | ducked | stopping
-let walkCur = 0, walkStartedAt = 0;
+let walkPhase = 'off';   // off | on | ducked | stopping
+let walkCur = 0, walkTicks = 0;
 function walkupSong() {
   const w = game.walkup;
   const yt = w && parseYT(w.url || '');
@@ -931,18 +932,17 @@ function walkTarget() {
 }
 function walkTick() {
   if (!walkPlayer || !walkReady) return;
+  walkTicks++;
   let state = -1;
   try { state = walkPlayer.getPlayerState(); } catch (e) {}
-  if (walkPhase === 'waiting' && state === 1 && walkPlayer.getCurrentTime() > 0) {
-    walkPhase = 'on'; clearTimeout(walkWatchT);
-  }
-  if (walkPhase === 'on' && state === 0) { const s = walkupSong(); walkPlayer.seekTo(s ? s.start : 0, true); walkPlayer.playVideo(); } // loop
+  // Loop the song if the player does report that it ended
+  if ((walkPhase === 'on' || walkPhase === 'ducked') && state === 0) { const s = walkupSong(); walkPlayer.seekTo(s ? s.start : 0, true); walkPlayer.playVideo(); }
   const target = walkTarget();
   // Fade in over ~1.2s, duck/restore over ~0.5s, fade out over ~1.5s
   const step = walkPhase === 'stopping' ? walkVol() / 15 : walkPhase === 'on' && walkCur < target ? walkVol() / 12 : walkVol() / 5;
   walkCur = walkCur < target ? Math.min(target, walkCur + step) : Math.max(target, walkCur - step);
   try {
-    if (target > 0 && walkPlayer.isMuted()) walkPlayer.unMute();
+    if (target > 0 && walkTicks % 5 === 0) walkPlayer.unMute();  // don't trust isMuted(); it can be stale too
     walkPlayer.setVolume(Math.round(walkCur));
   } catch (e) {}
   if (walkPhase === 'stopping' && walkCur <= 0) {
@@ -960,13 +960,10 @@ function startWalkup(delay = 0, preview = false) {
   walkOn = true; walkPreview = preview; renderWalkbar();
   walkStartT = setTimeout(() => {
     if (!walkOn) return;
-    walkPhase = 'waiting'; walkCur = 0;
+    walkPhase = 'on'; walkCur = 0; walkTicks = 0;
     try { walkPlayer.unMute(); walkPlayer.setVolume(0); } catch (e) {}
     walkPlayer.loadVideoById({videoId: s.id, startSeconds: s.start});
     walkLoop();
-    walkWatchT = setTimeout(() => {
-      if (walkOn && walkPhase === 'waiting') toast('Walk-up music didn\'t start. Check the internet, or try a different link in Setup.', 'bad');
-    }, 8000);
   }, Math.max(0, delay));
   return true;
 }
@@ -974,12 +971,12 @@ function stopWalkup(fast = false) {
   clearTimeout(walkStartT); clearTimeout(walkDuckT); clearTimeout(walkWatchT);
   if (!walkOn) return;
   walkOn = false; renderWalkbar();
-  if (fast || walkPhase === 'waiting') walkCur = 0;
+  if (fast) walkCur = 0;
   walkPhase = 'stopping'; walkLoop();
 }
 // Turn the music down while a sound effect plays, then bring it back.
 function duckWalkup() {
-  if (!walkOn || walkPhase === 'waiting') return;
+  if (!walkOn) return;
   clearTimeout(walkDuckT);
   walkPhase = 'ducked';
   walkDuckT = setTimeout(() => { if (walkOn && walkPhase === 'ducked') walkPhase = 'on'; }, 2400);
